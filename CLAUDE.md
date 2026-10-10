@@ -42,6 +42,9 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
 - Tests: `cd backend; .venv\Scripts\activate; pytest`. `tests/conftest.py` recreates
   `skincare_app_test` (name must end in `_test`) with `alembic upgrade head` each run, drops it at
   the end; each test runs in a rolled-back transaction (fixtures `db`, `client`).
+  Tests are organized in one folder per area (each with `__init__.py`): `tests/database/`
+  (migrations, models, constraints), `tests/api/` (endpoints); new areas get their own folder
+  (e.g. `tests/security/` in Step 3, `tests/auth/` in Step 4). Shared fixtures stay in `tests/conftest.py`.
 
 ## Key decisions (with reasons, for the report)
 - Datasets: ACNE04 (acne + severity), FFHQ-Wrinkle, Roboflow CC-BY redness and pigmentation sets,
