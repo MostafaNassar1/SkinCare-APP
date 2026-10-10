@@ -39,6 +39,9 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
 - Auth = FastAPI dependency `Depends(get_current_user)`, not middleware. Middleware = CORS, logging, errors.
 - Settings in `backend/.env` (git-ignored) via `app/core/config.py`; `get_db()` lives in `app/core/dependencies.py`.
 - Run: `cd backend; .venv\Scripts\activate; uvicorn app.main:app --reload` → http://127.0.0.1:8000/docs
+- Tests: `cd backend; .venv\Scripts\activate; pytest`. `tests/conftest.py` recreates
+  `skincare_app_test` (name must end in `_test`) with `alembic upgrade head` each run, drops it at
+  the end; each test runs in a rolled-back transaction (fixtures `db`, `client`).
 
 ## Key decisions (with reasons, for the report)
 - Datasets: ACNE04 (acne + severity), FFHQ-Wrinkle, Roboflow CC-BY redness and pigmentation sets,
@@ -60,16 +63,14 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
 - Phase 1 (database): done, then rebuilt as v2 on 2026-10-08.
 - Phase 2 Step 1 (setup + DB connection + /health): done, commit e6c9746, pushed to
   github.com/MostafaNassar1/SkinCare-APP (private, branch main).
-- **NEXT: Phase 2 Step 2**: SQLAlchemy models for the 26 tables (files by feature), then an
-  Alembic baseline whose `upgrade()` runs `database/schema_v2.sql` (so `alembic upgrade head`
-  rebuilds an empty DB); the existing dev DB is only `stamp head`ed. Test: autogenerate must
-  report no differences between models and DB. Also set up a separate `skincare_app_test` DB
-  for pytest (same server, free; needed because the migration test rebuilds an empty DB, and it
-  keeps dev data safe).
-  Model pitfalls: `updated_at` is set by DB triggers (use server_default + fetched value, since
-  `expire_on_commit=False`); `passive_deletes=True` so PostgreSQL handles ON DELETE; NUMERIC → Decimal.
-- Later Phase 2 steps: 3 security helpers (refresh/email tokens stored as SHA-256, not bcrypt)
-  **+ middleware** (CORS, request logging, global error handlers with one JSON error format) ·
+- Phase 2 Step 2 (models + Alembic + tests): done on branch `mostafa/feature/phase2-step2-models`
+  (2026-10-11), waiting for the PR squash-merge + tag `phase2-step2`.
+  Models in `app/models/` (12 files, allowed values in `choices.py`), shared `Base` in
+  `app/db/base.py` (PostgreSQL-default constraint names, eager_defaults for trigger-set
+  `updated_at`, passive_deletes on owned children). Dev DB stamped at `0002`.
+- **NEXT: Phase 2 Step 3**: security helpers (refresh/email tokens stored as SHA-256, not bcrypt)
+  **+ middleware** (CORS, request logging, global error handlers with one JSON error format).
+- Later Phase 2 steps: (refresh/email tokens stored as SHA-256, not bcrypt)
   4 email auth **+ admin login** (same JWT code, token marks user vs admin; needed by Step 10
   clinic managers) · 5 Google auth · 6 reset/verify email · 7 profile APIs · 8 reference APIs ·
   9 routines/logs · 10 clinics/appointments/Overpass · 11 notifications/calendar.
