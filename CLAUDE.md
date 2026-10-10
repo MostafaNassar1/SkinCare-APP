@@ -48,7 +48,10 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
 - Recommendations = **product types + ingredient + concentration** from the rules engine. No brand
   tables, no LLM. "Find nearby pharmacy" uses live Overpass data.
 - Schema v2 (26 tables) in `database/schema_v2.sql` + `seed_v2.sql`; the rules-engine algorithm is
-  described in the seed file. From Step 2 on, schema changes go through Alembic only.
+  described in the seed file. Migration `0001` runs schema_v2.sql, `0002` runs seed_v2.sql
+  (reference data the app needs). Both SQL files are **FROZEN**: every schema/data change is a new
+  Alembic migration. Commands (from `backend/`): `alembic upgrade head`, `alembic current`,
+  `alembic check` (models vs DB), `alembic revision --autogenerate -m "..."`.
 - Recommended libraries: google-auth (Google ID tokens), PyJWT, bcrypt used directly (not passlib / python-jose).
 - Open decisions: hosting, email sender (Gmail SMTP / Brevo), calendar type, Cloudinary upload flow,
   account-linking policy; weather = Open-Meteo (recommended).
