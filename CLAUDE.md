@@ -20,8 +20,9 @@ dermatologists through the clinic locator, with a visible disclaimer.
 - Small, tested commits on the branch. Never commit directly to `main`.
 - When the step is done: Claude pushes the branch and gives the PR title + description →
   the user opens the PR on github.com and clicks **Squash and merge** (one commit per step on main)
-  + Delete branch → Claude runs `git checkout main; git pull`, tags main (e.g. `phase2-step2`),
-  deletes the local branch and creates the next step's branch. No gh CLI needed.
+  → Claude runs `git checkout main; git pull`, tags main (e.g. `phase2-step2`) and creates the
+  next step's branch. Branches are **kept** (not deleted) for later debugging. No gh CLI needed.
+- An early PR merge mid-step is fine: keep working on the same branch and open a new PR at the end.
 - Bug found during a step: fix it in that step's branch. Bug in an already-merged step:
   its own `mostafa/bug/...` branch and PR.
 
