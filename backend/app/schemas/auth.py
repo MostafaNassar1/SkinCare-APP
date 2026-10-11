@@ -37,6 +37,23 @@ class RegisterRequest(BaseModel):
         return value
 
 
+class LoginRequest(BaseModel):
+    # no format or length rules here: anything that does not match an account gets the same
+    # "invalid credentials" answer, so the response never hints at what was wrong
+    email: str = Field(max_length=255)
+    password: str
+
+    @field_validator("email")
+    @classmethod
+    def email_trimmed(cls, value: str) -> str:
+        # phone keyboards and autofill often add a trailing space; the password is left as typed
+        return value.strip()
+
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str = Field(max_length=255)
+
+
 class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
