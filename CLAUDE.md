@@ -103,9 +103,9 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   branch `mostafa/feature/phase2-step3-security`, 60 tests passing; PR #3 squash-merged, tag `phase2-step3`.
 - Phase 2 Step 4 (register, login, refresh rotation + reuse detection, logout, /me, admin login,
   create_admin script): done 2026-10-11 on branch `mostafa/feature/phase2-step4-email-auth`,
-  127 tests passing; PR waiting for the user's "merge". The first super admin is not created yet
+  127 tests passing; PR #4 squash-merged, tag `phase2-step4`. The first super admin is not created yet
   (the user runs create_admin when needed).
-- **NEXT: Phase 2 Step 5**: Google sign-in (google-auth verifies the ID token; users identified by
+- **NOW: Phase 2 Step 5** on branch `mostafa/feature/phase2-step5-google-auth`: Google sign-in (google-auth verifies the ID token; users identified by
   `google_sub`) + account-linking policy (to decide first).
 - Later Phase 2 steps: 6 reset/verify email · 7 profile APIs · 8 reference APIs ·
   9 routines/logs · 10 clinics/appointments/Overpass · 11 notifications/calendar.
