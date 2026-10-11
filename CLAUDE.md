@@ -40,6 +40,18 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
 - A controller never imports another controller; logic needed in two places goes to services/.
 - Auth = FastAPI dependency `Depends(get_current_user)`, not middleware. Middleware = CORS, logging, errors.
 - Settings in `backend/.env` (git-ignored) via `app/core/config.py`; `get_db()` lives in `app/core/dependencies.py`.
+- App built by `create_app(settings)` in `app/main.py` (tests build their own copies).
+- Protect a route with `user: CurrentUser` / `admin: CurrentAdmin` (`app/core/dependencies.py`):
+  401 for missing/invalid/expired/wrong-type tokens, 403 for disabled accounts.
+- Errors: every error is `{"error": {"code", "message", "details"}}`
+  (`app/middleware/error_handlers.py`). Raise `AppError(status, "specific_code", "message")`
+  (`app/core/exceptions.py`) when the client needs a specific code; plain HTTPException gets a code
+  from its status. Validation errors never echo the input; crashes return a generic 500.
+- Logging: one line per request (method, path without query string, status, ms, request id);
+  every response has `X-Request-ID`; uvicorn's access log is silenced (it logs query strings).
+- Security helpers in `app/core/security.py`: bcrypt (max 72 bytes), JWT HS256 (fixed in code,
+  claims `sub`, `sub_type` user/admin), `generate_token()` + `hash_token()` (SHA-256) for
+  refresh/email tokens. `JWT_SECRET` only in `.env`. `CORS_ORIGINS` is a JSON list, empty by default.
 - Run: `cd backend; .venv\Scripts\activate; uvicorn app.main:app --reload` → http://127.0.0.1:8000/docs
 - Tests: `cd backend; .venv\Scripts\activate; pytest`. `tests/conftest.py` recreates
   `skincare_app_test` (name must end in `_test`) with `alembic upgrade head` each run, drops it at
@@ -75,9 +87,11 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   Models in `app/models/` (12 files, allowed values in `choices.py`), shared `Base` in
   `app/db/base.py` (PostgreSQL-default constraint names, eager_defaults for trigger-set
   `updated_at`, passive_deletes on owned children). Dev DB stamped at `0002`.
-- **NOW: Phase 2 Step 3** on branch `mostafa/feature/phase2-step3-security`: security helpers
-  (refresh/email tokens stored as SHA-256, not bcrypt) **+ middleware** (CORS, request logging,
-  global error handlers with one JSON error format). Tests in `tests/security/`.
+- Phase 2 Step 3 (security helpers + current-user dependencies + middleware): done 2026-10-11 on
+  branch `mostafa/feature/phase2-step3-security`, 60 tests passing; PR waiting for the user's "merge".
+- **NEXT: Phase 2 Step 4**: email/password register, login, refresh (with rotation), logout
+  + admin login. Note for login: avoid revealing whether an email exists (same error and similar
+  timing for unknown email and wrong password).
 - Later Phase 2 steps: 4 email auth **+ admin login** (same JWT code, token marks user vs admin; needed by Step 10
   clinic managers) · 5 Google auth · 6 reset/verify email · 7 profile APIs · 8 reference APIs ·
   9 routines/logs · 10 clinics/appointments/Overpass · 11 notifications/calendar.

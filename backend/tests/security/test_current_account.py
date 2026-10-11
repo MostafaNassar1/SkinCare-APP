@@ -4,16 +4,17 @@ from collections.abc import Generator
 from datetime import timedelta
 
 import pytest
-from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import CurrentAdmin, CurrentUser, get_db
 from app.core.security import create_access_token
+from app.main import create_app
 from app.models import Admin, User
 
-# A separate app with one route per dependency, so no test-only routes are added to the real app
-protected_app = FastAPI()
+# A separate copy of the app with one extra route per dependency, so no test-only routes are
+# added to the real app
+protected_app = create_app()
 
 
 @protected_app.get("/user-only")
@@ -80,6 +81,7 @@ def test_missing_token_is_rejected(api: TestClient, path: str):
 
     assert response.status_code == 401
     assert response.headers["WWW-Authenticate"] == "Bearer"
+    assert response.json()["error"]["code"] == "unauthorized"
 
 
 def test_garbage_token_is_rejected(api: TestClient):
@@ -127,7 +129,11 @@ def test_disabled_user_is_forbidden(api: TestClient, db: Session, user: User):
     response = api.get("/user-only", headers=bearer(create_access_token(user.id, "user")))
 
     assert response.status_code == 403
-    assert response.json()["detail"] == "Account is disabled"
+    assert response.json()["error"] == {
+        "code": "forbidden",
+        "message": "Account is disabled",
+        "details": None,
+    }
 
 
 def test_disabled_admin_is_forbidden(api: TestClient, db: Session, admin: Admin):
