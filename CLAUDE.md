@@ -88,8 +88,8 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   `app/db/base.py` (PostgreSQL-default constraint names, eager_defaults for trigger-set
   `updated_at`, passive_deletes on owned children). Dev DB stamped at `0002`.
 - Phase 2 Step 3 (security helpers + current-user dependencies + middleware): done 2026-10-11 on
-  branch `mostafa/feature/phase2-step3-security`, 60 tests passing; PR waiting for the user's "merge".
-- **NEXT: Phase 2 Step 4**: email/password register, login, refresh (with rotation), logout
+  branch `mostafa/feature/phase2-step3-security`, 60 tests passing; PR #3 squash-merged, tag `phase2-step3`.
+- **NOW: Phase 2 Step 4** on branch `mostafa/feature/phase2-step4-email-auth`: email/password register, login, refresh (with rotation), logout
   + admin login. Note for login: avoid revealing whether an email exists (same error and similar
   timing for unknown email and wrong password).
 - Later Phase 2 steps: 4 email auth **+ admin login** (same JWT code, token marks user vs admin; needed by Step 10
