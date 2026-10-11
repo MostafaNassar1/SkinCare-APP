@@ -39,7 +39,7 @@ def issue_token_pair(db: Session, subject_id: int, subject_type: SubjectType) ->
     refresh_token_repository.create(
         db,
         token_hash=hash_token(refresh_token),
-        expires_at=refresh_token_expires_at(),
+        expires_at=refresh_token_expires_at(subject_type),
         user_id=subject_id if subject_type == "user" else None,
         admin_id=subject_id if subject_type == "admin" else None,
     )

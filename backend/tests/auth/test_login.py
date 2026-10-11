@@ -2,9 +2,9 @@ from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.controllers import auth_controller
 from app.core.security import decode_access_token
 from app.models import RefreshToken, User
+from app.services import auth_service
 from tests.auth.conftest import EMAIL, PASSWORD, login
 
 # ---------- Success ----------
@@ -72,9 +72,9 @@ def test_google_only_account_gets_the_same_answer(client: TestClient, google_onl
 def test_unknown_email_still_runs_a_password_check(client: TestClient, monkeypatch):
     # equal work for known and unknown emails, so timing does not reveal registered emails
     calls = []
-    real_verify = auth_controller.verify_password
+    real_verify = auth_service.verify_password
     monkeypatch.setattr(
-        auth_controller, "verify_password", lambda *args: calls.append(1) or real_verify(*args)
+        auth_service, "verify_password", lambda *args: calls.append(1) or real_verify(*args)
     )
 
     login(client, email="nobody@example.com")

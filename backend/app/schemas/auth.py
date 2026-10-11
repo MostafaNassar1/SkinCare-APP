@@ -1,6 +1,6 @@
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import AfterValidator, BaseModel, EmailStr, Field, field_validator
 
 from app.core.security import BCRYPT_MAX_BYTES
 from app.schemas.user import UserOut
@@ -9,32 +9,38 @@ from app.schemas.user import UserOut
 PASSWORD_MIN_LENGTH = 8
 
 
+# Rules shared by user sign-up and admin creation
+
+
+def clean_full_name(value: str) -> str:
+    value = value.strip()
+    if not value:
+        raise ValueError("Full name is required")
+    return value
+
+
+def clean_email(value: str) -> str:
+    # one account per address regardless of case (the database index enforces the same)
+    return value.lower()
+
+
+def check_password_bytes(value: str) -> str:
+    # not stripped: spaces are allowed in passwords
+    if len(value.encode("utf-8")) > BCRYPT_MAX_BYTES:
+        raise ValueError(f"Password must be at most {BCRYPT_MAX_BYTES} bytes")
+    return value
+
+
+FullName = Annotated[str, Field(max_length=150), AfterValidator(clean_full_name)]
+NewEmail = Annotated[EmailStr, Field(max_length=255), AfterValidator(clean_email)]
+# min length is added where it is used (8 for users, 12 for admins)
+NewPassword = Annotated[str, AfterValidator(check_password_bytes)]
+
+
 class RegisterRequest(BaseModel):
-    full_name: str = Field(max_length=150)
-    email: EmailStr = Field(max_length=255)
-    password: str = Field(min_length=PASSWORD_MIN_LENGTH)
-
-    @field_validator("full_name")
-    @classmethod
-    def name_not_blank(cls, value: str) -> str:
-        value = value.strip()
-        if not value:
-            raise ValueError("Full name is required")
-        return value
-
-    @field_validator("email")
-    @classmethod
-    def email_lowercase(cls, value: str) -> str:
-        # one account per address regardless of case (the database index enforces the same)
-        return value.lower()
-
-    @field_validator("password")
-    @classmethod
-    def password_fits_bcrypt(cls, value: str) -> str:
-        # not stripped: spaces are allowed in passwords
-        if len(value.encode("utf-8")) > BCRYPT_MAX_BYTES:
-            raise ValueError(f"Password must be at most {BCRYPT_MAX_BYTES} bytes")
-        return value
+    full_name: FullName
+    email: NewEmail
+    password: Annotated[NewPassword, Field(min_length=PASSWORD_MIN_LENGTH)]
 
 
 class LoginRequest(BaseModel):

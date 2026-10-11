@@ -1,10 +1,9 @@
-from functools import cache
-
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import AppError, account_disabled
-from app.core.security import generate_token, hash_password, verify_password
+from app.core.security import hash_password
+from app.models import User
 from app.repositories import user_repository
 from app.schemas.auth import (
     LoginRequest,
@@ -14,7 +13,7 @@ from app.schemas.auth import (
     UserAuthResponse,
 )
 from app.schemas.user import UserOut
-from app.services import token_service
+from app.services import auth_service, token_service
 from app.services.token_service import TokenPair
 
 
@@ -22,18 +21,7 @@ def _email_taken() -> AppError:
     return AppError(409, "email_taken", "An account with this email already exists")
 
 
-def _invalid_credentials() -> AppError:
-    # one answer for unknown email, wrong password and Google-only accounts
-    return AppError(401, "invalid_credentials", "Incorrect email or password")
-
-
-@cache
-def _dummy_password_hash() -> str:
-    """A real bcrypt hash of a random password, computed once and never matched."""
-    return hash_password(generate_token())
-
-
-def _user_auth_response(tokens: TokenPair, user) -> UserAuthResponse:
+def _user_auth_response(tokens: TokenPair, user: User) -> UserAuthResponse:
     return UserAuthResponse(
         access_token=tokens.access_token,
         refresh_token=tokens.refresh_token,
@@ -66,17 +54,7 @@ def register(db: Session, data: RegisterRequest) -> UserAuthResponse:
 
 def login(db: Session, data: LoginRequest) -> UserAuthResponse:
     user = user_repository.get_by_email(db, data.email)
-
-    if user is None or user.password_hash is None:
-        # Still run a full bcrypt check, so this answer takes as long as a wrong password and the
-        # response time does not reveal which emails have an account.
-        verify_password(data.password, _dummy_password_hash())
-        raise _invalid_credentials()
-    if not verify_password(data.password, user.password_hash):
-        raise _invalid_credentials()
-    # only revealed to someone who knows the password
-    if not user.is_active:
-        raise account_disabled()
+    auth_service.check_password_login(user, data.password)
 
     tokens = token_service.issue_token_pair(db, user.id, "user")
     db.commit()

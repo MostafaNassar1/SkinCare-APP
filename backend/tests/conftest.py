@@ -69,7 +69,13 @@ def db() -> Generator[Session, None, None]:
     connection = engine.connect()
     transaction = connection.begin()
     # commits inside the code under test only release a savepoint, the outer transaction stays
-    session = Session(bind=connection, join_transaction_mode="create_savepoint")
+    session = Session(
+        bind=connection,
+        join_transaction_mode="create_savepoint",
+        # same settings as the app's SessionLocal, so tests see the same behaviour
+        autoflush=False,
+        expire_on_commit=False,
+    )
     try:
         yield session
     finally:

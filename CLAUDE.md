@@ -52,13 +52,25 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
 - Security helpers in `app/core/security.py`: bcrypt (max 72 bytes), JWT HS256 (fixed in code,
   claims `sub`, `sub_type` user/admin), `generate_token()` + `hash_token()` (SHA-256) for
   refresh/email tokens. `JWT_SECRET` only in `.env`. `CORS_ORIGINS` is a JSON list, empty by default.
+- Auth endpoints: `/auth/register|login|refresh|logout|me` (users) and
+  `/admin/auth/login|refresh|logout|me` (admins). Shared logic: `services/token_service.py`
+  (issue / rotate with reuse detection / revoke) and `services/auth_service.py`
+  (`check_password_login`: same 401 `invalid_credentials` + dummy bcrypt for unknown emails).
+  Sessions: access 15 min; refresh 30 days (users) / 12 hours (admins). Passwords: 8+ chars
+  (users), 12+ (admins), max 72 bytes. Error codes so far: `email_taken`, `invalid_credentials`,
+  `account_disabled`, `invalid_refresh_token`, `unauthorized`, `validation_error`.
+- Create admins (the user runs it; password typed hidden):
+  `python -m app.scripts.create_admin --name "..." --email ... [--role ... --clinic-id N]`.
+- No login rate limiting (user's decision): list it as a known limitation in the report.
 - Run: `cd backend; .venv\Scripts\activate; uvicorn app.main:app --reload` → http://127.0.0.1:8000/docs
 - Tests: `cd backend; .venv\Scripts\activate; pytest`. `tests/conftest.py` recreates
   `skincare_app_test` (name must end in `_test`) with `alembic upgrade head` each run, drops it at
   the end; each test runs in a rolled-back transaction (fixtures `db`, `client`).
   Tests are organized in one folder per area (each with `__init__.py`): `tests/database/`
   (migrations, models, constraints), `tests/api/` (endpoints); new areas get their own folder
-  (e.g. `tests/security/` in Step 3, `tests/auth/` in Step 4). Shared fixtures stay in `tests/conftest.py`.
+  (e.g. `tests/security/`, `tests/middleware/`, `tests/auth/`, `tests/scripts/`). Shared fixtures
+  stay in `tests/conftest.py` (area fixtures in that folder's own conftest.py). The test session
+  uses the same settings as `SessionLocal` (`expire_on_commit=False`, `autoflush=False`).
 
 ## Key decisions (with reasons, for the report)
 - Datasets: ACNE04 (acne + severity), FFHQ-Wrinkle, Roboflow CC-BY redness and pigmentation sets,
@@ -89,11 +101,13 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   `updated_at`, passive_deletes on owned children). Dev DB stamped at `0002`.
 - Phase 2 Step 3 (security helpers + current-user dependencies + middleware): done 2026-10-11 on
   branch `mostafa/feature/phase2-step3-security`, 60 tests passing; PR #3 squash-merged, tag `phase2-step3`.
-- **NOW: Phase 2 Step 4** on branch `mostafa/feature/phase2-step4-email-auth`: email/password register, login, refresh (with rotation), logout
-  + admin login. Note for login: avoid revealing whether an email exists (same error and similar
-  timing for unknown email and wrong password).
-- Later Phase 2 steps: 4 email auth **+ admin login** (same JWT code, token marks user vs admin; needed by Step 10
-  clinic managers) · 5 Google auth · 6 reset/verify email · 7 profile APIs · 8 reference APIs ·
+- Phase 2 Step 4 (register, login, refresh rotation + reuse detection, logout, /me, admin login,
+  create_admin script): done 2026-10-11 on branch `mostafa/feature/phase2-step4-email-auth`,
+  127 tests passing; PR waiting for the user's "merge". The first super admin is not created yet
+  (the user runs create_admin when needed).
+- **NEXT: Phase 2 Step 5**: Google sign-in (google-auth verifies the ID token; users identified by
+  `google_sub`) + account-linking policy (to decide first).
+- Later Phase 2 steps: 6 reset/verify email · 7 profile APIs · 8 reference APIs ·
   9 routines/logs · 10 clinics/appointments/Overpass · 11 notifications/calendar.
   Tests (pytest) inside each step.
 - Not yet assigned to a step: a background scheduler for reminders/weather/achievements
