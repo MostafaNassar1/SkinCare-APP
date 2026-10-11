@@ -5,6 +5,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
+from app.core.exceptions import account_disabled
 from app.core.security import InvalidTokenError, SubjectType, decode_access_token
 from app.db.session import SessionLocal
 from app.models import Admin, User
@@ -50,10 +51,6 @@ def _subject_id_from_token(
     return token_data.subject_id
 
 
-def _account_disabled() -> HTTPException:
-    return HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account is disabled")
-
-
 def get_current_user(
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
     db: Annotated[Session, Depends(get_db)],
@@ -63,7 +60,7 @@ def get_current_user(
     if user is None:  # deleted after the token was issued
         raise _unauthorized("Invalid or expired token")
     if not user.is_active:
-        raise _account_disabled()
+        raise account_disabled()
     return user
 
 
@@ -76,7 +73,7 @@ def get_current_admin(
     if admin is None:
         raise _unauthorized("Invalid or expired token")
     if not admin.is_active:
-        raise _account_disabled()
+        raise account_disabled()
     return admin
 
 

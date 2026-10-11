@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     jwt_secret: str = Field(min_length=32)
     access_token_expire_minutes: int = 15  # short, so a stolen access token is useless quickly
     refresh_token_expire_days: int = 30  # mobile users stay logged in; rotated on every refresh
+    # admins can change rules and see all appointments, so a stolen session is more dangerous:
+    # one working day, then a fresh login
+    admin_refresh_token_expire_hours: int = 12
 
     # Browser origins allowed to call the API, e.g. ["http://localhost:5173"] for the React admin.
     # Empty = no browser access; the mobile app does not need CORS.

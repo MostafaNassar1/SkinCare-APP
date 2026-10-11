@@ -108,6 +108,12 @@ def test_token_hash_is_sha256_and_repeatable():
     assert hash_token(token) != hash_token(generate_token())
 
 
-def test_refresh_token_expiry_uses_the_configured_days():
+def test_user_refresh_token_lasts_the_configured_days():
     expected = datetime.now(UTC) + timedelta(days=get_settings().refresh_token_expire_days)
-    assert abs(refresh_token_expires_at() - expected) < timedelta(seconds=5)
+    assert abs(refresh_token_expires_at("user") - expected) < timedelta(seconds=5)
+
+
+def test_admin_refresh_token_lasts_the_configured_hours():
+    hours = get_settings().admin_refresh_token_expire_hours
+    expected = datetime.now(UTC) + timedelta(hours=hours)
+    assert abs(refresh_token_expires_at("admin") - expected) < timedelta(seconds=5)

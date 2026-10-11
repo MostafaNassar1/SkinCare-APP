@@ -111,6 +111,11 @@ def hash_token(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
-def refresh_token_expires_at() -> datetime:
-    """Expiry time for a refresh token issued now."""
-    return datetime.now(UTC) + timedelta(days=get_settings().refresh_token_expire_days)
+def refresh_token_expires_at(subject_type: SubjectType) -> datetime:
+    """Expiry time for a refresh token issued now (admins get much shorter sessions)."""
+    settings = get_settings()
+    if subject_type == "admin":
+        lifetime = timedelta(hours=settings.admin_refresh_token_expire_hours)
+    else:
+        lifetime = timedelta(days=settings.refresh_token_expire_days)
+    return datetime.now(UTC) + lifetime

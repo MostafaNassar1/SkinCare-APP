@@ -21,3 +21,8 @@ class AppError(HTTPException):
         super().__init__(status_code=status_code, detail=message, headers=headers)
         self.code = code
         self.details = details
+
+
+def account_disabled() -> AppError:
+    """The account exists but was deactivated (used at login, refresh and on every request)."""
+    return AppError(403, "account_disabled", "Account is disabled")

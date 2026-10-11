@@ -130,7 +130,7 @@ def test_disabled_user_is_forbidden(api: TestClient, db: Session, user: User):
 
     assert response.status_code == 403
     assert response.json()["error"] == {
-        "code": "forbidden",
+        "code": "account_disabled",
         "message": "Account is disabled",
         "details": None,
     }
