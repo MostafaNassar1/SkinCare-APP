@@ -1,6 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import URL
 
@@ -21,6 +22,15 @@ class Settings(BaseSettings):
     db_name: str = "skincare_app"
     db_user: str = "postgres"
     db_password: str
+
+    # Signs the access tokens. Must stay secret: anyone who has it can create valid tokens.
+    jwt_secret: str = Field(min_length=32)
+    access_token_expire_minutes: int = 15  # short, so a stolen access token is useless quickly
+    refresh_token_expire_days: int = 30  # mobile users stay logged in; rotated on every refresh
+
+    # Browser origins allowed to call the API, e.g. ["http://localhost:5173"] for the React admin.
+    # Empty = no browser access; the mobile app does not need CORS.
+    cors_origins: list[str] = []
 
     @property
     def database_url(self) -> URL:
