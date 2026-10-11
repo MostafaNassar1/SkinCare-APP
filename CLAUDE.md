@@ -17,12 +17,14 @@ dermatologists through the clinic locator, with a visible disclaimer.
 - One branch per step, created from an up-to-date `main`:
   `mostafa/<type>/phase<P>-step<S>-<short-desc>` (type = feature | bug | spike | docs | chore),
   e.g. `mostafa/feature/phase2-step2-models`.
-- Small, tested commits on the branch. Never commit directly to `main`.
-- When the step is done: Claude pushes the branch and gives the PR title + description →
-  the user opens the PR on github.com and clicks **Squash and merge** (one commit per step on main)
-  → Claude runs `git checkout main; git pull`, tags main (e.g. `phase2-step2`) and creates the
-  next step's branch. Branches are **kept** (not deleted) for later debugging. No gh CLI needed.
-- An early PR merge mid-step is fine: keep working on the same branch and open a new PR at the end.
+- Small, tested commits on the branch, pushed after each part. Never commit directly to `main`.
+- **One PR per step, only when the whole step is finished** (no PRs for individual parts).
+  Claude creates it with the gh CLI (`gh pr create --base main --head <branch> --title ...
+  --body-file ...`), shows the user the summary, and **merges only after the user says "merge"**
+  (`gh pr merge <n> --squash`, one commit per step on main, no `--delete-branch`).
+  Then Claude runs `git checkout main; git pull`, tags main (e.g. `phase2-step3`), pushes the tag
+  and creates the next step's branch. Branches are **kept** for later debugging.
+- gh 2.102.0 is installed at `C:\Program Files\GitHub CLI\` and logged in as MostafaNassar1.
 - Bug found during a step: fix it in that step's branch. Bug in an already-merged step:
   its own `mostafa/bug/...` branch and PR.
 
@@ -61,20 +63,22 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
 - Recommended libraries: google-auth (Google ID tokens), PyJWT, bcrypt used directly (not passlib / python-jose).
 - Open decisions: hosting, email sender (Gmail SMTP / Brevo), calendar type, Cloudinary upload flow,
   account-linking policy; weather = Open-Meteo (recommended).
+- The local DB password is the PostgreSQL default (same as the username): fine for local
+  development only, **must be changed to a strong one before hosting**.
 
 ## Progress
 - Phase 1 (database): done, then rebuilt as v2 on 2026-10-08.
 - Phase 2 Step 1 (setup + DB connection + /health): done, commit e6c9746, pushed to
-  github.com/MostafaNassar1/SkinCare-APP (private, branch main).
-- Phase 2 Step 2 (models + Alembic + tests): done on branch `mostafa/feature/phase2-step2-models`
-  (2026-10-11), waiting for the PR squash-merge + tag `phase2-step2`.
+  github.com/MostafaNassar1/SkinCare-APP (**public** repo, kept public by the user's choice:
+  never commit secrets; `.env` is git-ignored).
+- Phase 2 Step 2 (models + Alembic + tests): done 2026-10-11, PR #2 squash-merged, tag `phase2-step2`.
   Models in `app/models/` (12 files, allowed values in `choices.py`), shared `Base` in
   `app/db/base.py` (PostgreSQL-default constraint names, eager_defaults for trigger-set
   `updated_at`, passive_deletes on owned children). Dev DB stamped at `0002`.
-- **NEXT: Phase 2 Step 3**: security helpers (refresh/email tokens stored as SHA-256, not bcrypt)
-  **+ middleware** (CORS, request logging, global error handlers with one JSON error format).
-- Later Phase 2 steps: (refresh/email tokens stored as SHA-256, not bcrypt)
-  4 email auth **+ admin login** (same JWT code, token marks user vs admin; needed by Step 10
+- **NOW: Phase 2 Step 3** on branch `mostafa/feature/phase2-step3-security`: security helpers
+  (refresh/email tokens stored as SHA-256, not bcrypt) **+ middleware** (CORS, request logging,
+  global error handlers with one JSON error format). Tests in `tests/security/`.
+- Later Phase 2 steps: 4 email auth **+ admin login** (same JWT code, token marks user vs admin; needed by Step 10
   clinic managers) · 5 Google auth · 6 reset/verify email · 7 profile APIs · 8 reference APIs ·
   9 routines/logs · 10 clinics/appointments/Overpass · 11 notifications/calendar.
   Tests (pytest) inside each step.
