@@ -152,10 +152,10 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   `phase2-step5`.
 - Phase 2 Step 6 (Google sign-in + account linking + Google-only users add a password via
   forgot-password): done 2026-10-12 on branch `mostafa/feature/phase2-step6-google-auth`,
-  222 tests; PR waiting for the user's manual Google test and "merge". Google Cloud project
+  222 tests; PR #6 squash-merged, tag `phase2-step6`. Google Cloud project
   "SkinCare App", Web client id in `.env` (`GOOGLE_CLIENT_IDS`), JS origin http://localhost:5500,
   consent screen in Testing mode (only listed test users can sign in).
-- **NEXT: Phase 2 Step 7**: profile APIs (profile, skin quiz, allergies, location, FCM devices).
+- **NOW: Phase 2 Step 7** on branch `mostafa/feature/phase2-step7-profile`: profile APIs (profile, skin quiz, allergies, location, FCM devices).
 - Later Phase 2 steps: 8 reference APIs ·
   9 routines/logs · 10 clinics/appointments/Overpass · 11 notifications/calendar.
   Tests (pytest) inside each step.
