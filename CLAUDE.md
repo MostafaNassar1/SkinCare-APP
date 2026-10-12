@@ -125,8 +125,17 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   Google user takes it over and the unproven password is DELETED (prevents pre-account takeover).
   Google-only users may add a password through forgot-password (inbox proven by the code).
   Google tokens with email_verified=false are refused. Admins never use Google login.
-- Open decisions: hosting, calendar type, Cloudinary upload flow;
-  weather = Open-Meteo (recommended).
+- **Daily skin forecast (decided 2026-10-12, like Flo's weather insights):** every day at
+  **11:00 in the user's time zone** (`users.timezone`), a push notification combines today's
+  weather (Open-Meteo: temperature, humidity, UV, wind) **+ air quality** (Open-Meteo air-quality
+  API, free) with the user's skin profile (quiz skin type + latest scan concerns) → a personal
+  message + tip, e.g. "Humidity 82%: your oily skin may feel greasier by midday...". Rule-based
+  (no LLM), saved in `notifications` and shown as a "Today's skin forecast" card. Built in
+  Step 11; needs the background scheduler, a richer `weather_skin_tips` (skin type, thresholds,
+  priority, new conditions like windy/polluted: migration) and a user on/off setting.
+  Step 7 already collects its inputs (location, skin quiz, FCM devices).
+- Open decisions: hosting, calendar type, Cloudinary upload flow, background scheduler
+  (required by the daily forecast); weather = Open-Meteo.
 - The local DB password is the PostgreSQL default (same as the username): fine for local
   development only, **must be changed to a strong one before hosting**.
 
