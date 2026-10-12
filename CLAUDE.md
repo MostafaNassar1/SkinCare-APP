@@ -85,8 +85,18 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   Alembic migration. Commands (from `backend/`): `alembic upgrade head`, `alembic current`,
   `alembic check` (models vs DB), `alembic revision --autogenerate -m "..."`.
 - Recommended libraries: google-auth (Google ID tokens), PyJWT, bcrypt used directly (not passlib / python-jose).
-- Open decisions: hosting, email sender (Gmail SMTP / Brevo), calendar type, Cloudinary upload flow,
-  account-linking policy; weather = Open-Meteo (recommended).
+- **Sign-up/login = Instagram-style (decided 2026-10-12):** email/password (any real provider) OR
+  "Continue with Google". Email sign-up creates an UNVERIFIED account and emails a 6-digit code;
+  the user enters it in the app → verified + logged in. Login of an unverified account → 403
+  `email_not_verified` (app shows the code screen, "Resend code"). Forgot password = code by email
+  + new password. Codes: 10 min expiry, max 5 wrong attempts (needed: 6 digits = 1M options),
+  stored hashed. Re-registering an UNVERIFIED email replaces that account (no email squatting).
+  Plus a DNS domain check at sign-up (rejects e.g. user@exasad.com). Google users are verified by
+  Google. NOT an allowlist of providers (blocks university/work emails, proves nothing).
+- Email sender = **Gmail SMTP** with a dedicated Gmail account + App Password (free, ~500/day);
+  the App Password lives only in `.env`.
+- Open decisions: hosting, calendar type, Cloudinary upload flow, account-linking policy (Step 6);
+  weather = Open-Meteo (recommended).
 - The local DB password is the PostgreSQL default (same as the username): fine for local
   development only, **must be changed to a strong one before hosting**.
 
@@ -105,9 +115,12 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   create_admin script): done 2026-10-11 on branch `mostafa/feature/phase2-step4-email-auth`,
   127 tests passing; PR #4 squash-merged, tag `phase2-step4`. The first super admin is not created yet
   (the user runs create_admin when needed).
-- **NOW: Phase 2 Step 5** on branch `mostafa/feature/phase2-step5-google-auth`: Google sign-in (google-auth verifies the ID token; users identified by
-  `google_sub`) + account-linking policy (to decide first).
-- Later Phase 2 steps: 6 reset/verify email · 7 profile APIs · 8 reference APIs ·
+- **NOW: Phase 2 Step 5** on branch `mostafa/feature/phase2-step5-email-verification`
+  (steps 5 and 6 swapped on 2026-10-12, because the code is part of sign-up itself):
+  Instagram-style email codes — verification at sign-up, resend, forgot/reset password, DNS
+  domain check, Gmail SMTP sender. Changes Step 4 behaviour: register no longer returns tokens.
+- Later Phase 2 steps: 6 Google sign-in (google-auth verifies the ID token; users identified by
+  `google_sub`) + account-linking policy · 7 profile APIs · 8 reference APIs ·
   9 routines/logs · 10 clinics/appointments/Overpass · 11 notifications/calendar.
   Tests (pytest) inside each step.
 - Not yet assigned to a step: a background scheduler for reminders/weather/achievements
