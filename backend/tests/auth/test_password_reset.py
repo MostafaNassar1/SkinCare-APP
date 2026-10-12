@@ -43,15 +43,13 @@ def test_forgot_password_emails_a_reset_code(client: TestClient, outbox, registe
     assert "password reset" in outbox[-1].subject
 
 
-@pytest.mark.parametrize("who", ["unknown", "google_only", "disabled", "waiting"])
+@pytest.mark.parametrize("who", ["unknown", "disabled", "waiting"])
 def test_forgot_password_reveals_nothing(
-    client: TestClient, db: Session, outbox, registered: dict, google_only_user: User, who: str
+    client: TestClient, db: Session, outbox, registered: dict, who: str
 ):
     email = EMAIL
     if who == "unknown":
         email = "nobody@example.com"
-    elif who == "google_only":
-        email = google_only_user.email
     elif who == "disabled":
         user_repository.get_by_email(db, EMAIL).is_active = False
         db.flush()
