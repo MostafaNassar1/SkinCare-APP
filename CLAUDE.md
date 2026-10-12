@@ -114,7 +114,13 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   Google. NOT an allowlist of providers (blocks university/work emails, proves nothing).
 - Email sender = **Gmail SMTP** with a dedicated Gmail account + App Password (free, ~500/day);
   the App Password lives only in `.env`.
-- Open decisions: hosting, calendar type, Cloudinary upload flow, account-linking policy (Step 6);
+- **Account linking (decided 2026-10-12, Step 6):** "Continue with Google" with a new email →
+  new verified account (no password). Known google_sub → log in. Email of a VERIFIED password
+  account → link automatically (both methods work). Email of an UNVERIFIED password account → the
+  Google user takes it over and the unproven password is DELETED (prevents pre-account takeover).
+  Google-only users may add a password through forgot-password (inbox proven by the code).
+  Google tokens with email_verified=false are refused. Admins never use Google login.
+- Open decisions: hosting, calendar type, Cloudinary upload flow;
   weather = Open-Meteo (recommended).
 - The local DB password is the PostgreSQL default (same as the username): fine for local
   development only, **must be changed to a strong one before hosting**.
@@ -137,9 +143,9 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
 - Phase 2 Step 5 (steps 5 and 6 swapped on 2026-10-12): Instagram-style email codes —
   verification at sign-up, resend, forgot/reset password, DNS domain check, Gmail SMTP sender
   (skincare.app.noreply1@gmail.com, tested OK). Done 2026-10-12 on branch
-  `mostafa/feature/phase2-step5-email-verification`, 191 tests; PR waiting for the user's manual
-  test and "merge".
-- **NEXT: Phase 2 Step 6**: Google sign-in + account-linking policy (decide first) + a Google
+  `mostafa/feature/phase2-step5-email-verification`, 195 tests; PR #5 squash-merged, tag
+  `phase2-step5`.
+- **NOW: Phase 2 Step 6** on branch `mostafa/feature/phase2-step6-google-auth`: Google sign-in + linking (decided) + a Google
   OAuth Client ID (the user creates it in Google Cloud Console).
 - Later Phase 2 steps: 6 Google sign-in (google-auth verifies the ID token; users identified by
   `google_sub`) + account-linking policy · 7 profile APIs · 8 reference APIs ·
