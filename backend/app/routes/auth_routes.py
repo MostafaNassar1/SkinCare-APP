@@ -7,9 +7,12 @@ from app.controllers import auth_controller
 from app.core.dependencies import CurrentUser, get_db
 from app.schemas.auth import (
     CodeSentResponse,
+    ForgotPasswordRequest,
     LoginRequest,
+    MessageResponse,
     RefreshTokenRequest,
     RegisterRequest,
+    ResetPasswordRequest,
     TokenResponse,
     UserAuthResponse,
     VerifyEmailRequest,
@@ -36,6 +39,18 @@ def verify_email(data: VerifyEmailRequest, db: DB):
 )
 def resend_verification(data: LoginRequest, db: DB, background: BackgroundTasks):
     return auth_controller.resend_verification_code(db, data, background)
+
+
+@router.post(
+    "/forgot-password", status_code=status.HTTP_202_ACCEPTED, response_model=MessageResponse
+)
+def forgot_password(data: ForgotPasswordRequest, db: DB, background: BackgroundTasks):
+    return auth_controller.forgot_password(db, data, background)
+
+
+@router.post("/reset-password", response_model=UserAuthResponse)
+def reset_password(data: ResetPasswordRequest, db: DB):
+    return auth_controller.reset_password(db, data)
 
 
 @router.post("/login", response_model=UserAuthResponse)

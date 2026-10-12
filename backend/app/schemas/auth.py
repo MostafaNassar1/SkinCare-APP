@@ -70,6 +70,24 @@ class CodeSentResponse(BaseModel):
     resend_available_in: int  # seconds before "Resend code" may be used
 
 
+class ForgotPasswordRequest(BaseModel):
+    email: str = Field(max_length=255)
+
+    @field_validator("email")
+    @classmethod
+    def email_trimmed(cls, value: str) -> str:
+        return value.strip()
+
+
+class ResetPasswordRequest(ForgotPasswordRequest):
+    code: str = Field(pattern=r"^\d{6}$")
+    new_password: Annotated[NewPassword, Field(min_length=PASSWORD_MIN_LENGTH)]
+
+
+class MessageResponse(BaseModel):
+    message: str
+
+
 class RefreshTokenRequest(BaseModel):
     refresh_token: str = Field(max_length=255)
 

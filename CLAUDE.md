@@ -52,13 +52,26 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
 - Security helpers in `app/core/security.py`: bcrypt (max 72 bytes), JWT HS256 (fixed in code,
   claims `sub`, `sub_type` user/admin), `generate_token()` + `hash_token()` (SHA-256) for
   refresh/email tokens. `JWT_SECRET` only in `.env`. `CORS_ORIGINS` is a JSON list, empty by default.
-- Auth endpoints: `/auth/register|login|refresh|logout|me` (users) and
-  `/admin/auth/login|refresh|logout|me` (admins). Shared logic: `services/token_service.py`
-  (issue / rotate with reuse detection / revoke) and `services/auth_service.py`
-  (`check_password_login`: same 401 `invalid_credentials` + dummy bcrypt for unknown emails).
+- Auth endpoints (users): `/auth/register` (unverified account + emailed code, no tokens),
+  `/auth/verify-email` {email, password, code} → tokens, `/auth/resend-verification`
+  {email, password}, `/auth/forgot-password` {email} (always the same 202),
+  `/auth/reset-password` {email, code, new_password} → logs out all devices + tokens,
+  `/auth/login` (403 `email_not_verified` if unverified), `/auth/refresh|logout|me`.
+  Admins: `/admin/auth/login|refresh|logout|me`. Shared logic: `services/token_service.py`
+  (issue / rotate with reuse detection / revoke), `services/auth_service.py`
+  (`check_password_login`: same 401 `invalid_credentials` + dummy bcrypt for unknown emails),
+  `services/email_code_service.py` (issue / check codes, resend wait), `services/email_service.py`
+  + `email_templates.py` (emails sent via FastAPI BackgroundTasks after the response).
   Sessions: access 15 min; refresh 30 days (users) / 12 hours (admins). Passwords: 8+ chars
-  (users), 12+ (admins), max 72 bytes. Error codes so far: `email_taken`, `invalid_credentials`,
+  (users), 12+ (admins), max 72 bytes. Error codes so far: `email_taken`, `email_undeliverable`,
+  `invalid_credentials`, `email_not_verified`, `already_verified`, `invalid_code`
+  (details.attempts_left), `code_expired`, `code_recently_sent` (429, details.retry_after),
   `account_disabled`, `invalid_refresh_token`, `unauthorized`, `validation_error`.
+- Tests: an autouse `outbox` fixture catches every email; `tests/auth/conftest.py` has
+  `sign_up`, `last_code(outbox)`, `verify`, `age_codes` and the `unverified` / `registered`
+  (verified + logged in) fixtures.
+- Check email settings: `python -m app.scripts.send_test_email --to <address>`. The user's `.env`
+  uses `EMAIL_BACKEND=smtp` (real Gmail): never sign up made-up addresses against the dev server.
 - Create admins (the user runs it; password typed hidden):
   `python -m app.scripts.create_admin --name "..." --email ... [--role ... --clinic-id N]`.
 - No login rate limiting (user's decision): list it as a known limitation in the report.
@@ -121,10 +134,13 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   create_admin script): done 2026-10-11 on branch `mostafa/feature/phase2-step4-email-auth`,
   127 tests passing; PR #4 squash-merged, tag `phase2-step4`. The first super admin is not created yet
   (the user runs create_admin when needed).
-- **NOW: Phase 2 Step 5** on branch `mostafa/feature/phase2-step5-email-verification`
-  (steps 5 and 6 swapped on 2026-10-12, because the code is part of sign-up itself):
-  Instagram-style email codes — verification at sign-up, resend, forgot/reset password, DNS
-  domain check, Gmail SMTP sender. Changes Step 4 behaviour: register no longer returns tokens.
+- Phase 2 Step 5 (steps 5 and 6 swapped on 2026-10-12): Instagram-style email codes —
+  verification at sign-up, resend, forgot/reset password, DNS domain check, Gmail SMTP sender
+  (skincare.app.noreply1@gmail.com, tested OK). Done 2026-10-12 on branch
+  `mostafa/feature/phase2-step5-email-verification`, 191 tests; PR waiting for the user's manual
+  test and "merge".
+- **NEXT: Phase 2 Step 6**: Google sign-in + account-linking policy (decide first) + a Google
+  OAuth Client ID (the user creates it in Google Cloud Console).
 - Later Phase 2 steps: 6 Google sign-in (google-auth verifies the ID token; users identified by
   `google_sub`) + account-linking policy · 7 profile APIs · 8 reference APIs ·
   9 routines/logs · 10 clinics/appointments/Overpass · 11 notifications/calendar.

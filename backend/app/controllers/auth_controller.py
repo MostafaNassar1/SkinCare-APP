@@ -8,12 +8,19 @@ from app.core.config import get_settings
 from app.core.exceptions import AppError, account_disabled
 from app.core.security import hash_password
 from app.models import User
-from app.repositories import refresh_token_repository, user_repository
+from app.repositories import (
+    email_token_repository,
+    refresh_token_repository,
+    user_repository,
+)
 from app.schemas.auth import (
     CodeSentResponse,
+    ForgotPasswordRequest,
     LoginRequest,
+    MessageResponse,
     RefreshTokenRequest,
     RegisterRequest,
+    ResetPasswordRequest,
     TokenResponse,
     UserAuthResponse,
     VerifyEmailRequest,
@@ -26,8 +33,8 @@ from app.services import (
     email_service,
     token_service,
 )
-from app.services.email_code_service import VERIFICATION
-from app.services.email_templates import verification_code_email
+from app.services.email_code_service import PASSWORD_RESET, VERIFICATION
+from app.services.email_templates import password_reset_code_email, verification_code_email
 from app.services.token_service import TokenPair
 
 
@@ -138,6 +145,55 @@ def resend_verification_code(
     if wait:
         raise email_code_service.code_recently_sent(wait)
     return _send_verification_code(db, user, background)
+
+
+FORGOT_PASSWORD_MESSAGE = (
+    "If an account exists for this email, we sent a code to reset the password."
+)
+
+
+def forgot_password(
+    db: Session, data: ForgotPasswordRequest, background: BackgroundTasks
+) -> MessageResponse:
+    """Email a reset code. The answer is always the same, so it never reveals which emails have an
+    account (or that one is waiting before a new code may be sent)."""
+    user = user_repository.get_by_email(db, data.email)
+    can_reset = user is not None and user.password_hash is not None and user.is_active
+    if can_reset and not email_code_service.seconds_until_resend(db, user.id, PASSWORD_RESET):
+        settings = get_settings()
+        code = email_code_service.issue_code(db, user.id, PASSWORD_RESET)
+        db.commit()
+        background.add_task(
+            email_service.send_email,
+            password_reset_code_email(
+                user.email, user.full_name, code, settings.email_code_expire_minutes
+            ),
+        )
+    return MessageResponse(message=FORGOT_PASSWORD_MESSAGE)
+
+
+def reset_password(db: Session, data: ResetPasswordRequest) -> UserAuthResponse:
+    """Correct code -> new password, every device logged out, and a fresh login."""
+    user = user_repository.get_by_email(db, data.email)
+    if user is None or user.password_hash is None:
+        raise email_code_service.code_expired()  # same answer as an account without a code
+
+    email_code_service.check_code(db, user.id, PASSWORD_RESET, data.code)
+    if not user.is_active:
+        db.rollback()
+        raise account_disabled()
+
+    now = datetime.now(UTC)
+    user.password_hash = hash_password(data.new_password)
+    user.email_verified = True  # reading the code proved the inbox belongs to this user
+    # the password may have been reset because it was stolen: end every existing session
+    refresh_token_repository.revoke_all_active(db, revoked_at=now, user_id=user.id)
+    email_token_repository.invalidate_active(
+        db, user_id=user.id, purpose=VERIFICATION, used_at=now
+    )
+    tokens = token_service.issue_token_pair(db, user.id, "user")
+    db.commit()
+    return _user_auth_response(tokens, user)
 
 
 def login(db: Session, data: LoginRequest) -> UserAuthResponse:
