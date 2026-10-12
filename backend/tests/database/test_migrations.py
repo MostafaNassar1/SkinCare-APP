@@ -3,6 +3,7 @@
 from alembic import command
 from alembic.autogenerate import compare_metadata
 from alembic.migration import MigrationContext
+from alembic.script import ScriptDirectory
 from sqlalchemy import inspect, text
 
 from app.db.base import Base
@@ -30,7 +31,9 @@ def test_upgrade_creates_all_tables_and_triggers():
         assert len(_table_names(conn)) == 26
         triggers = conn.execute(text("SELECT count(*) FROM pg_trigger WHERE NOT tgisinternal"))
         assert triggers.scalar() == 6
-        assert conn.execute(text("SELECT version_num FROM alembic_version")).scalar() == "0002"
+        # the database is at the newest migration file, whichever that is
+        head = ScriptDirectory.from_config(alembic_config(conn)).get_current_head()
+        assert conn.execute(text("SELECT version_num FROM alembic_version")).scalar() == head
 
 
 def test_seed_reference_data_loaded():

@@ -14,6 +14,12 @@ from pathlib import Path
 # created once, on first import, and must point at the test database.
 TEST_DB_NAME = os.environ.get("TEST_DB_NAME", "skincare_app_test")
 os.environ["DB_NAME"] = TEST_DB_NAME
+# tests must not depend on the internet (DNS); the domain check has its own tests with fake answers
+os.environ["EMAIL_CHECK_DELIVERABILITY"] = "false"
+# fast bcrypt in tests (production default is 12, see test_passwords.py)
+os.environ["BCRYPT_ROUNDS"] = "4"
+# never send real emails from tests, whatever .env says (the outbox fixture also catches them)
+os.environ["EMAIL_BACKEND"] = "console"
 
 import pytest  # noqa: E402
 from alembic import command  # noqa: E402
@@ -26,6 +32,8 @@ from app.core.config import get_settings  # noqa: E402
 from app.core.dependencies import get_db  # noqa: E402
 from app.db.session import engine  # noqa: E402
 from app.main import app  # noqa: E402
+from app.services import email_service  # noqa: E402
+from app.services.email_service import Email  # noqa: E402
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 
@@ -91,3 +99,11 @@ def client(db: Session) -> Generator[TestClient, None, None]:
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
+
+
+@pytest.fixture(autouse=True)
+def outbox(monkeypatch) -> list[Email]:
+    """Every email the code sends during a test lands here instead of being delivered."""
+    sent: list[Email] = []
+    monkeypatch.setattr(email_service, "_deliver", sent.append)
+    return sent

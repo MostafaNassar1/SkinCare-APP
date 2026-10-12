@@ -7,9 +7,12 @@ from app.core.config import get_settings
 from app.core.security import (
     JWT_ALGORITHM,
     InvalidTokenError,
+    code_matches,
     create_access_token,
     decode_access_token,
+    generate_code,
     generate_token,
+    hash_code,
     hash_token,
     refresh_token_expires_at,
 )
@@ -117,3 +120,29 @@ def test_admin_refresh_token_lasts_the_configured_hours():
     hours = get_settings().admin_refresh_token_expire_hours
     expected = datetime.now(UTC) + timedelta(hours=hours)
     assert abs(refresh_token_expires_at("admin") - expected) < timedelta(seconds=5)
+
+
+# ---------- 6-digit email codes ----------
+
+
+def test_codes_are_six_digits_and_random():
+    codes = [generate_code() for _ in range(2000)]
+
+    assert all(len(code) == 6 and code.isdigit() for code in codes)
+    assert len(set(codes)) > 1990  # practically no repeats
+    assert any(code.startswith("0") for code in codes)  # leading zeros are kept
+
+
+def test_code_hash_depends_on_user_and_purpose():
+    base = hash_code("123456", user_id=1, purpose="email_verification")
+
+    assert base == hash_code("123456", user_id=1, purpose="email_verification")
+    assert base != hash_code("123456", user_id=2, purpose="email_verification")
+    assert base != hash_code("123456", user_id=1, purpose="password_reset")
+
+
+def test_code_matches_only_the_right_code():
+    stored = hash_code("123456", user_id=1, purpose="email_verification")
+
+    assert code_matches("123456", stored, user_id=1, purpose="email_verification")
+    assert not code_matches("123457", stored, user_id=1, purpose="email_verification")

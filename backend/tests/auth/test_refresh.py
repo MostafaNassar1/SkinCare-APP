@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.security import hash_token
 from app.models import Admin, RefreshToken, User
 from app.services import token_service
-from tests.auth.conftest import bearer, login
+from tests.auth.conftest import bearer, last_code, login, sign_up, verify
 
 
 def refresh(client: TestClient, token: str):
@@ -53,11 +53,10 @@ def test_reuse_revokes_every_session_of_the_account(client: TestClient, register
     assert_rejected(refresh(client, tablet))
 
 
-def test_reuse_does_not_affect_other_accounts(client: TestClient, registered: dict):
-    other = client.post(
-        "/auth/register",
-        json={"full_name": "Other", "email": "other@example.com", "password": "long-enough-2"},
-    ).json()
+def test_reuse_does_not_affect_other_accounts(client: TestClient, outbox, registered: dict):
+    sign_up(client, email="other@example.com")
+    other = verify(client, last_code(outbox, to="other@example.com"), email="other@example.com")
+    other = other.json()
     refresh(client, registered["refresh_token"])
     refresh(client, registered["refresh_token"])  # reuse on the first account
 

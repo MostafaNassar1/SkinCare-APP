@@ -1,12 +1,12 @@
 """Model behaviour that depends on the database: defaults, triggers and constraints."""
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.models import User
+from app.models import EmailToken, User
 
 
 def make_user(**overrides) -> User:
@@ -54,3 +54,45 @@ def test_email_account_requires_a_password(db: Session):
     db.add(make_user(password_hash=None))
     with pytest.raises(IntegrityError, match="users_check"):
         db.flush()
+
+
+# ---------- email_tokens after migration 0003 ----------
+
+
+def make_code(user: User, **overrides) -> EmailToken:
+    fields = {
+        "user_id": user.id,
+        "purpose": "email_verification",
+        "token_hash": "same-hash",
+        "expires_at": datetime.now(UTC) + timedelta(minutes=10),
+    }
+    return EmailToken(**(fields | overrides))
+
+
+def test_code_attempts_start_at_zero(db: Session):
+    user = make_user()
+    db.add(user)
+    db.flush()
+    code = make_code(user)
+    db.add(code)
+    db.flush()
+
+    assert code.attempts == 0
+
+
+def test_code_attempts_cannot_be_negative(db: Session):
+    user = make_user()
+    db.add(user)
+    db.flush()
+    db.add(make_code(user, attempts=-1))
+    with pytest.raises(IntegrityError, match="email_tokens_attempts_check"):
+        db.flush()
+
+
+def test_two_users_can_hold_the_same_code_hash(db: Session):
+    first, second = make_user(), make_user(email="other@example.com")
+    db.add_all([first, second])
+    db.flush()
+
+    db.add_all([make_code(first), make_code(second)])
+    db.flush()  # no unique violation: 6-digit codes can repeat across users
