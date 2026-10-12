@@ -56,7 +56,9 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   `/auth/verify-email` {email, password, code} → tokens, `/auth/resend-verification`
   {email, password}, `/auth/forgot-password` {email} (always the same 202),
   `/auth/reset-password` {email, code, new_password} → logs out all devices + tokens,
-  `/auth/login` (403 `email_not_verified` if unverified), `/auth/refresh|logout|me`.
+  `/auth/login` (403 `email_not_verified` if unverified), `/auth/refresh|logout|me`,
+  `/auth/google` {id_token} → tokens + `is_new_user` (linking policy in
+  `controllers/google_auth_controller.py`, token check in `services/google_auth_service.py`).
   Admins: `/admin/auth/login|refresh|logout|me`. Shared logic: `services/token_service.py`
   (issue / rotate with reuse detection / revoke), `services/auth_service.py`
   (`check_password_login`: same 401 `invalid_credentials` + dummy bcrypt for unknown emails),
@@ -66,10 +68,13 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   (users), 12+ (admins), max 72 bytes. Error codes so far: `email_taken`, `email_undeliverable`,
   `invalid_credentials`, `email_not_verified`, `already_verified`, `invalid_code`
   (details.attempts_left), `code_expired`, `code_recently_sent` (429, details.retry_after),
-  `account_disabled`, `invalid_refresh_token`, `unauthorized`, `validation_error`.
+  `account_disabled`, `invalid_refresh_token`, `unauthorized`, `validation_error`,
+  `invalid_google_token`, `google_email_not_verified`, `google_account_mismatch`,
+  `google_sign_in_unavailable` (503).
 - Tests: an autouse `outbox` fixture catches every email; `tests/auth/conftest.py` has
   `sign_up`, `last_code(outbox)`, `verify`, `age_codes` and the `unverified` / `registered`
-  (verified + logged in) fixtures.
+  (verified + logged in) fixtures. `fake_google` (tests/conftest.py + tests/google_fake.py)
+  signs Google ID tokens with a generated RSA key for the real google-auth verification.
 - Check email settings: `python -m app.scripts.send_test_email --to <address>`. The user's `.env`
   uses `EMAIL_BACKEND=smtp` (real Gmail): never sign up made-up addresses against the dev server.
 - Create admins (the user runs it; password typed hidden):
@@ -114,7 +119,13 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   Google. NOT an allowlist of providers (blocks university/work emails, proves nothing).
 - Email sender = **Gmail SMTP** with a dedicated Gmail account + App Password (free, ~500/day);
   the App Password lives only in `.env`.
-- Open decisions: hosting, calendar type, Cloudinary upload flow, account-linking policy (Step 6);
+- **Account linking (decided 2026-10-12, Step 6):** "Continue with Google" with a new email →
+  new verified account (no password). Known google_sub → log in. Email of a VERIFIED password
+  account → link automatically (both methods work). Email of an UNVERIFIED password account → the
+  Google user takes it over and the unproven password is DELETED (prevents pre-account takeover).
+  Google-only users may add a password through forgot-password (inbox proven by the code).
+  Google tokens with email_verified=false are refused. Admins never use Google login.
+- Open decisions: hosting, calendar type, Cloudinary upload flow;
   weather = Open-Meteo (recommended).
 - The local DB password is the PostgreSQL default (same as the username): fine for local
   development only, **must be changed to a strong one before hosting**.
@@ -137,12 +148,15 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
 - Phase 2 Step 5 (steps 5 and 6 swapped on 2026-10-12): Instagram-style email codes —
   verification at sign-up, resend, forgot/reset password, DNS domain check, Gmail SMTP sender
   (skincare.app.noreply1@gmail.com, tested OK). Done 2026-10-12 on branch
-  `mostafa/feature/phase2-step5-email-verification`, 191 tests; PR waiting for the user's manual
-  test and "merge".
-- **NEXT: Phase 2 Step 6**: Google sign-in + account-linking policy (decide first) + a Google
-  OAuth Client ID (the user creates it in Google Cloud Console).
-- Later Phase 2 steps: 6 Google sign-in (google-auth verifies the ID token; users identified by
-  `google_sub`) + account-linking policy · 7 profile APIs · 8 reference APIs ·
+  `mostafa/feature/phase2-step5-email-verification`, 195 tests; PR #5 squash-merged, tag
+  `phase2-step5`.
+- Phase 2 Step 6 (Google sign-in + account linking + Google-only users add a password via
+  forgot-password): done 2026-10-12 on branch `mostafa/feature/phase2-step6-google-auth`,
+  222 tests; PR waiting for the user's manual Google test and "merge". Google Cloud project
+  "SkinCare App", Web client id in `.env` (`GOOGLE_CLIENT_IDS`), JS origin http://localhost:5500,
+  consent screen in Testing mode (only listed test users can sign in).
+- **NEXT: Phase 2 Step 7**: profile APIs (profile, skin quiz, allergies, location, FCM devices).
+- Later Phase 2 steps: 8 reference APIs ·
   9 routines/logs · 10 clinics/appointments/Overpass · 11 notifications/calendar.
   Tests (pytest) inside each step.
 - Not yet assigned to a step: a background scheduler for reminders/weather/achievements

@@ -156,9 +156,13 @@ def forgot_password(
     db: Session, data: ForgotPasswordRequest, background: BackgroundTasks
 ) -> MessageResponse:
     """Email a reset code. The answer is always the same, so it never reveals which emails have an
-    account (or that one is waiting before a new code may be sent)."""
+    account (or that one is waiting before a new code may be sent).
+
+    Google-only accounts get a code too: that is how they add a password (the code proves the
+    inbox), after which both login methods work.
+    """
     user = user_repository.get_by_email(db, data.email)
-    can_reset = user is not None and user.password_hash is not None and user.is_active
+    can_reset = user is not None and user.is_active
     if can_reset and not email_code_service.seconds_until_resend(db, user.id, PASSWORD_RESET):
         settings = get_settings()
         code = email_code_service.issue_code(db, user.id, PASSWORD_RESET)
@@ -173,9 +177,10 @@ def forgot_password(
 
 
 def reset_password(db: Session, data: ResetPasswordRequest) -> UserAuthResponse:
-    """Correct code -> new password, every device logged out, and a fresh login."""
+    """Correct code -> new (or first, for Google-only accounts) password, every device logged out,
+    and a fresh login. auth_provider is unchanged: it records how the account was created."""
     user = user_repository.get_by_email(db, data.email)
-    if user is None or user.password_hash is None:
+    if user is None:
         raise email_code_service.code_expired()  # same answer as an account without a code
 
     email_code_service.check_code(db, user.id, PASSWORD_RESET, data.code)

@@ -68,6 +68,11 @@ class Settings(BaseSettings):
             raise ValueError("EMAIL_BACKEND=smtp needs SMTP_USERNAME and SMTP_PASSWORD")
         return self
 
+    # Google sign-in: a Google ID token is accepted only if it was issued for one of these OAuth
+    # Client IDs (our Web client; later also Android/iOS). Empty = Google sign-in is refused,
+    # never "accept any audience".
+    google_client_ids: list[str] = []
+
     # Browser origins allowed to call the API, e.g. ["http://localhost:5173"] for the React admin.
     # Empty = no browser access; the mobile app does not need CORS.
     cors_origins: list[str] = []

@@ -25,6 +25,7 @@ import pytest  # noqa: E402
 from alembic import command  # noqa: E402
 from alembic.config import Config  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
+from google.oauth2 import id_token  # noqa: E402
 from sqlalchemy import Connection, create_engine, text  # noqa: E402
 from sqlalchemy.orm import Session  # noqa: E402
 
@@ -34,6 +35,8 @@ from app.db.session import engine  # noqa: E402
 from app.main import app  # noqa: E402
 from app.services import email_service  # noqa: E402
 from app.services.email_service import Email  # noqa: E402
+from tests.google_fake import CLIENT_ID as GOOGLE_CLIENT_ID  # noqa: E402
+from tests.google_fake import FakeGoogle  # noqa: E402
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 
@@ -107,3 +110,12 @@ def outbox(monkeypatch) -> list[Email]:
     sent: list[Email] = []
     monkeypatch.setattr(email_service, "_deliver", sent.append)
     return sent
+
+
+@pytest.fixture
+def fake_google(monkeypatch) -> FakeGoogle:
+    """Google sign-in configured for the test client id, with Google's keys replaced by ours."""
+    google = FakeGoogle()
+    monkeypatch.setattr(id_token, "_fetch_certs", lambda request, url: google.certs)
+    monkeypatch.setattr(get_settings(), "google_client_ids", [GOOGLE_CLIENT_ID])
+    return google

@@ -101,3 +101,11 @@ class TokenResponse(BaseModel):
 
 class UserAuthResponse(TokenResponse):
     user: UserOut
+
+
+class GoogleSignInRequest(BaseModel):
+    id_token: str = Field(max_length=4096)  # the ID token the app received from Google
+
+
+class GoogleAuthResponse(UserAuthResponse):
+    is_new_user: bool  # True: the app shows onboarding (skin quiz) instead of the home screen

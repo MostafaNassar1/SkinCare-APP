@@ -15,6 +15,25 @@ def get_by_email(db: Session, email: str) -> User | None:
     return db.scalar(select(User).where(func.lower(User.email) == email.lower()))
 
 
+def get_by_google_sub(db: Session, google_sub: str) -> User | None:
+    return db.scalar(select(User).where(User.google_sub == google_sub))
+
+
+def create_google_user(db: Session, *, full_name: str, email: str, google_sub: str) -> User:
+    """A new "Continue with Google" account: verified by Google, no password."""
+    user = User(
+        full_name=full_name,
+        email=email,
+        google_sub=google_sub,
+        auth_provider="google",
+        email_verified=True,
+        profile=UserProfile(),
+    )
+    db.add(user)
+    db.flush()
+    return user
+
+
 def _never_verified_before(cutoff: datetime):
     return (
         User.auth_provider == "email",
