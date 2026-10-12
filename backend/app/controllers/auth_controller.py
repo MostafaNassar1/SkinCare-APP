@@ -1,6 +1,7 @@
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.core.exceptions import AppError, account_disabled
 from app.core.security import hash_password
 from app.models import User
@@ -13,7 +14,7 @@ from app.schemas.auth import (
     UserAuthResponse,
 )
 from app.schemas.user import UserOut
-from app.services import auth_service, token_service
+from app.services import auth_service, email_domain_service, token_service
 from app.services.token_service import TokenPair
 
 
@@ -32,6 +33,15 @@ def _user_auth_response(tokens: TokenPair, user: User) -> UserAuthResponse:
 
 def register(db: Session, data: RegisterRequest) -> UserAuthResponse:
     """Create an email/password account and log the user in straight away."""
+    if get_settings().email_check_deliverability and not email_domain_service.can_receive_email(
+        data.email
+    ):
+        raise AppError(
+            422,
+            "email_undeliverable",
+            "This email address cannot receive emails. Please check it.",
+            details=[{"field": "email", "message": "Domain does not accept email"}],
+        )
     if user_repository.get_by_email(db, data.email) is not None:
         raise _email_taken()
 

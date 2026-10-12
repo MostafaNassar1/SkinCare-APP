@@ -1,5 +1,6 @@
 import pytest
 
+from app.core.config import Settings, get_settings
 from app.core.security import PasswordTooLongError, hash_password, verify_password
 
 
@@ -43,3 +44,13 @@ def test_verifying_an_overlong_password_returns_false():
     hashed = hash_password("a" * 72)
     # same first 72 bytes: bcrypt alone would accept it, the helper must not
     assert not verify_password("a" * 72 + "extra", hashed)
+
+
+def test_production_uses_bcrypt_cost_12():
+    # tests run with cost 4 for speed; the real application must keep the slow default
+    assert Settings.model_fields["bcrypt_rounds"].default == 12
+
+
+def test_hash_uses_the_configured_cost():
+    rounds = get_settings().bcrypt_rounds
+    assert hash_password("any-password").startswith(f"$2b${rounds:02d}$")
