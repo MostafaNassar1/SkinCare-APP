@@ -1,7 +1,8 @@
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import URL
 
@@ -38,6 +39,29 @@ class Settings(BaseSettings):
     # At sign-up, reject emails whose domain cannot receive email (DNS lookup). Off in tests,
     # which must not depend on the internet.
     email_check_deliverability: bool = True
+
+    # Outgoing email. "console" prints emails in the server terminal (development, no account
+    # needed); "smtp" really sends them through Gmail.
+    email_backend: Literal["console", "smtp"] = "console"
+    smtp_host: str = "smtp.gmail.com"
+    smtp_port: int = 587  # STARTTLS: the connection is encrypted before logging in
+    smtp_username: str = ""  # the app's Gmail address, also used as the sender
+    smtp_password: SecretStr = SecretStr("")  # Gmail App Password; SecretStr hides it in logs
+    email_from_name: str = "SkinCare App"
+
+    @field_validator("smtp_password", mode="before")
+    @classmethod
+    def remove_spaces(cls, value: object) -> object:
+        # Google shows App Passwords in groups ("abcd efgh ijkl mnop"); accept them as copied
+        return value.replace(" ", "") if isinstance(value, str) else value
+
+    @model_validator(mode="after")
+    def smtp_needs_credentials(self) -> "Settings":
+        if self.email_backend == "smtp" and not (
+            self.smtp_username and self.smtp_password.get_secret_value()
+        ):
+            raise ValueError("EMAIL_BACKEND=smtp needs SMTP_USERNAME and SMTP_PASSWORD")
+        return self
 
     # Browser origins allowed to call the API, e.g. ["http://localhost:5173"] for the React admin.
     # Empty = no browser access; the mobile app does not need CORS.
