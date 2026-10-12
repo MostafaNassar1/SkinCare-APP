@@ -146,4 +146,5 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   9 routines/logs · 10 clinics/appointments/Overpass · 11 notifications/calendar.
   Tests (pytest) inside each step.
 - Not yet assigned to a step: a background scheduler for reminders/weather/achievements
-  (depends on hosting).
+  (depends on hosting). It must also run `python -m app.scripts.cleanup_unverified` daily
+  (deletes email sign-ups still unverified after 24 h; `--dry-run`, `--hours N`).
