@@ -3,11 +3,13 @@ from typing import Annotated
 from fastapi import APIRouter, BackgroundTasks, Depends, Response, status
 from sqlalchemy.orm import Session
 
-from app.controllers import auth_controller
+from app.controllers import auth_controller, google_auth_controller
 from app.core.dependencies import CurrentUser, get_db
 from app.schemas.auth import (
     CodeSentResponse,
     ForgotPasswordRequest,
+    GoogleAuthResponse,
+    GoogleSignInRequest,
     LoginRequest,
     MessageResponse,
     RefreshTokenRequest,
@@ -51,6 +53,12 @@ def forgot_password(data: ForgotPasswordRequest, db: DB, background: BackgroundT
 @router.post("/reset-password", response_model=UserAuthResponse)
 def reset_password(data: ResetPasswordRequest, db: DB):
     return auth_controller.reset_password(db, data)
+
+
+@router.post("/google", response_model=GoogleAuthResponse)
+def google_sign_in(data: GoogleSignInRequest, db: DB):
+    """'Continue with Google': sign up, log in or link, depending on the email."""
+    return google_auth_controller.google_sign_in(db, data)
 
 
 @router.post("/login", response_model=UserAuthResponse)
