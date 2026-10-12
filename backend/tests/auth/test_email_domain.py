@@ -6,7 +6,6 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.models import User
 from app.repositories import user_repository
 from app.services import email_domain_service
 
@@ -69,4 +68,4 @@ def test_sign_up_with_a_real_domain_is_accepted(client: TestClient, db: Session,
     response = client.post("/auth/register", json=SIGN_UP | {"email": "aya@gmail.com"})
 
     assert response.status_code == 201
-    assert db.get(User, response.json()["user"]["id"]) is not None
+    assert user_repository.get_by_email(db, "aya@gmail.com") is not None

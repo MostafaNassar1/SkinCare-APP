@@ -1,6 +1,7 @@
 """Password hashing, access tokens (JWT) and one-time tokens (refresh / email)."""
 
 import hashlib
+import hmac
 import secrets
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -110,6 +111,30 @@ def hash_token(token: str) -> str:
     impossible, and a fast hash with the same result every time lets the database look it up.
     """
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def generate_code() -> str:
+    """A random 6-digit code, 000000-999999, from a cryptographically secure generator.
+
+    `secrets`, never `random`: random's numbers can be predicted from earlier ones.
+    """
+    return f"{secrets.randbelow(1_000_000):06d}"
+
+
+def hash_code(code: str, *, user_id: int, purpose: str) -> str:
+    """HMAC-SHA256 of a 6-digit code, keyed with the server secret.
+
+    A plain SHA-256 of a 6-digit code could be reversed by hashing all 1,000,000 codes; the HMAC
+    also needs the secret, which is not in the database. Including the user id and purpose means
+    a code only works for its own account and its own use.
+    """
+    message = f"{purpose}:{user_id}:{code}".encode("utf-8")
+    return hmac.new(get_settings().jwt_secret.encode("utf-8"), message, hashlib.sha256).hexdigest()
+
+
+def code_matches(code: str, stored_hash: str, *, user_id: int, purpose: str) -> bool:
+    # compare_digest takes the same time whether the first or the last character differs
+    return hmac.compare_digest(hash_code(code, user_id=user_id, purpose=purpose), stored_hash)
 
 
 def refresh_token_expires_at(subject_type: SubjectType) -> datetime:

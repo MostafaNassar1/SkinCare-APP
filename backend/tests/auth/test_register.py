@@ -1,92 +1,127 @@
+import hashlib
+
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.security import decode_access_token, hash_token, verify_password
-from app.models import RefreshToken, User
+from app.core.security import hash_code, verify_password
+from app.models import EmailToken, User
 from app.repositories import user_repository
+from tests.auth.conftest import EMAIL, PASSWORD, age_codes, last_code, sign_up
 
-VALID = {"full_name": "Aya Test", "email": "Aya@Example.com", "password": "long-enough-1"}
-
-
-def register(client: TestClient, **changes):
-    return client.post("/auth/register", json=VALID | changes)
+# ---------- Success: an unverified account and a code ----------
 
 
-# ---------- Success ----------
-
-
-def test_register_creates_the_account_and_logs_in(client: TestClient):
-    response = register(client)
+def test_sign_up_sends_a_code_instead_of_logging_in(client: TestClient):
+    response = sign_up(client, email="Aya@Example.com")
 
     assert response.status_code == 201
-    body = response.json()
-    assert body["token_type"] == "bearer"
-    assert body["expires_in"] == 15 * 60
-    assert body["user"]["full_name"] == "Aya Test"
-    assert body["user"]["email"] == "aya@example.com"  # stored in lowercase
-    assert body["user"]["email_verified"] is False
-    assert body["user"]["auth_provider"] == "email"
-    # the access token belongs to the new user
-    token = decode_access_token(body["access_token"])
-    assert (token.subject_id, token.subject_type) == (body["user"]["id"], "user")
+    assert response.json() == {
+        "email": "aya@example.com",  # stored in lowercase
+        "message": "We sent a 6-digit code to aya@example.com.",
+        "code_expires_in": 600,
+        "resend_available_in": 60,
+    }
+    assert "access_token" not in response.text  # no login before the email is proven
 
 
-def test_password_is_stored_only_as_a_bcrypt_hash(client: TestClient, db: Session):
-    response = register(client)
+def test_account_is_created_unverified_with_an_empty_profile(client: TestClient, db: Session):
+    sign_up(client)
+    user = user_repository.get_by_email(db, EMAIL)
 
-    assert "long-enough-1" not in response.text
-    assert "password" not in response.json()["user"]
-    user = db.get(User, response.json()["user"]["id"])
-    assert user.password_hash != "long-enough-1"
-    assert verify_password("long-enough-1", user.password_hash)
-
-
-def test_an_empty_profile_is_created(client: TestClient, db: Session):
-    user = db.get(User, register(client).json()["user"]["id"])
-
+    assert user.email_verified is False
     assert user.profile is not None
-    assert user.profile.skin_type is None
+    assert verify_password(PASSWORD, user.password_hash)
 
 
-def test_only_the_refresh_token_hash_is_stored(client: TestClient, db: Session):
-    body = register(client).json()
+def test_the_code_is_emailed_to_the_user(client: TestClient, outbox):
+    sign_up(client)
 
-    stored = db.scalars(select(RefreshToken).where(RefreshToken.user_id == body["user"]["id"]))
-    stored = stored.all()
-    assert len(stored) == 1
-    assert stored[0].token_hash == hash_token(body["refresh_token"])
-    assert stored[0].token_hash != body["refresh_token"]
-    assert stored[0].revoked_at is None
+    assert len(outbox) == 1
+    assert outbox[0].to == EMAIL
+    code = last_code(outbox)
+    assert code.isdigit() and len(code) == 6
+    assert code in outbox[0].text and code in outbox[0].html
 
 
-def test_name_is_trimmed(client: TestClient):
-    assert register(client, full_name="  Aya Test  ").json()["user"]["full_name"] == "Aya Test"
+def test_only_an_hmac_of_the_code_is_stored(client: TestClient, db: Session, outbox):
+    sign_up(client)
+    user = user_repository.get_by_email(db, EMAIL)
+    code = last_code(outbox)
+    stored = db.query(EmailToken).filter_by(user_id=user.id).one()
+
+    assert stored.token_hash != code
+    assert stored.token_hash != hashlib.sha256(code.encode()).hexdigest()  # needs the secret
+    assert stored.token_hash == hash_code(code, user_id=user.id, purpose="email_verification")
+    assert stored.purpose == "email_verification"
+
+
+def test_password_is_not_in_the_response(client: TestClient):
+    assert PASSWORD not in sign_up(client).text
+
+
+def test_name_is_trimmed(client: TestClient, db: Session):
+    sign_up(client, full_name="  Aya Test  ")
+    assert user_repository.get_by_email(db, EMAIL).full_name == "Aya Test"
 
 
 def test_password_with_spaces_is_kept_as_typed(client: TestClient, db: Session):
-    user_id = register(client, password="  spaced pass  ").json()["user"]["id"]
-    assert verify_password("  spaced pass  ", db.get(User, user_id).password_hash)
+    sign_up(client, password="  spaced pass  ")
+    user = user_repository.get_by_email(db, EMAIL)
+    assert verify_password("  spaced pass  ", user.password_hash)
 
 
-# ---------- Duplicate email ----------
+# ---------- Email already used ----------
 
 
-def test_same_email_in_another_case_is_refused(client: TestClient):
-    register(client)
-    response = register(client, email="AYA@EXAMPLE.COM")
+def test_verified_email_cannot_sign_up_again(client: TestClient, registered: dict):
+    response = sign_up(client, email="AYA@EXAMPLE.COM")
 
     assert response.status_code == 409
     assert response.json()["error"]["code"] == "email_taken"
 
 
-def test_simultaneous_sign_up_returns_409_not_500(client: TestClient, monkeypatch):
-    register(client)
+def test_google_account_email_cannot_sign_up_with_a_password(
+    client: TestClient, google_only_user: User
+):
+    assert sign_up(client, email=google_only_user.email).status_code == 409
+
+
+def test_unverified_email_can_be_claimed_by_signing_up_again(
+    client: TestClient, db: Session, outbox, unverified: User
+):
+    # someone signed up with this address but never proved it; the real owner signs up again
+    age_codes(db, unverified.id, seconds=120)
+
+    response = sign_up(client, full_name="Real Owner", password="owner-password-1")
+
+    assert response.status_code == 201
+    db.refresh(unverified)
+    assert unverified.full_name == "Real Owner"
+    assert verify_password("owner-password-1", unverified.password_hash)
+    assert len(outbox) == 2  # a fresh code was sent
+    first, second = db.query(EmailToken).filter_by(user_id=unverified.id).order_by(EmailToken.id)
+    assert first.used_at is not None  # the first code was retired
+    assert second.used_at is None
+
+
+def test_signing_up_again_too_soon_is_refused(client: TestClient, db: Session, unverified: User):
+    response = sign_up(client, password="another-password-1")
+
+    assert response.status_code == 429
+    error = response.json()["error"]
+    assert error["code"] == "code_recently_sent"
+    assert 0 < error["details"]["retry_after"] <= 60
+    assert response.headers["Retry-After"] == str(error["details"]["retry_after"])
+    db.refresh(unverified)
+    assert verify_password(PASSWORD, unverified.password_hash)  # nothing changed
+
+
+def test_simultaneous_sign_up_returns_409_not_500(client: TestClient, monkeypatch, unverified):
     # simulate the race: the "does it exist?" check misses the account created a moment earlier
     monkeypatch.setattr(user_repository, "get_by_email", lambda db, email: None)
 
-    response = register(client)
+    response = sign_up(client)
 
     assert response.status_code == 409
     assert response.json()["error"]["code"] == "email_taken"
@@ -106,11 +141,12 @@ def test_simultaneous_sign_up_returns_409_not_500(client: TestClient, monkeypatc
         ({"full_name": "x" * 151}, "full_name"),
     ],
 )
-def test_invalid_input_is_rejected(client: TestClient, changes, field):
-    response = register(client, **changes)
+def test_invalid_input_is_rejected(client: TestClient, outbox, changes, field):
+    response = sign_up(client, **changes)
 
     assert response.status_code == 422
     assert [d["field"] for d in response.json()["error"]["details"]] == [field]
+    assert outbox == []  # no email for a rejected sign-up
 
 
 def test_missing_fields_are_listed(client: TestClient):
@@ -121,4 +157,4 @@ def test_missing_fields_are_listed(client: TestClient):
 
 
 def test_rejected_password_is_not_echoed(client: TestClient):
-    assert "tiny123" not in register(client, password="tiny123").text
+    assert "tiny123" not in sign_up(client, password="tiny123").text

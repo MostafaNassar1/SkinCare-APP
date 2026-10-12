@@ -40,6 +40,11 @@ class Settings(BaseSettings):
     # which must not depend on the internet.
     email_check_deliverability: bool = True
 
+    # 6-digit email codes (verification, password reset)
+    email_code_expire_minutes: int = 10
+    email_code_max_attempts: int = 5  # 6 digits = 1,000,000 options: a script could guess them all
+    email_code_resend_seconds: int = 60  # protects inboxes from floods and Gmail's daily limit
+
     # Outgoing email. "console" prints emails in the server terminal (development, no account
     # needed); "smtp" really sends them through Gmail.
     email_backend: Literal["console", "smtp"] = "console"

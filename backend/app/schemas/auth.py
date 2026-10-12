@@ -56,6 +56,20 @@ class LoginRequest(BaseModel):
         return value.strip()
 
 
+class VerifyEmailRequest(LoginRequest):
+    """Email + password + code: proving the inbox (code) is not enough on its own, or someone who
+    re-registered the unverified email with their own password could get the account."""
+
+    code: str = Field(pattern=r"^\d{6}$")
+
+
+class CodeSentResponse(BaseModel):
+    email: str
+    message: str
+    code_expires_in: int  # seconds
+    resend_available_in: int  # seconds before "Resend code" may be used
+
+
 class RefreshTokenRequest(BaseModel):
     refresh_token: str = Field(max_length=255)
 
