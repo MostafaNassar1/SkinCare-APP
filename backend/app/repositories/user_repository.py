@@ -15,6 +15,21 @@ def get_by_email(db: Session, email: str) -> User | None:
     return db.scalar(select(User).where(func.lower(User.email) == email.lower()))
 
 
+def delete_account(db: Session, user_id: int) -> None:
+    """Permanently delete the account. ON DELETE CASCADE in the database removes everything that
+    belongs to it (profile, allergies, scans, routines, logs, devices, tokens, codes,
+    appointments, notifications). The caller commits."""
+    db.execute(delete(User).where(User.id == user_id))
+
+
+def get_or_create_profile(db: Session, user: User) -> UserProfile:
+    """Every account gets a profile at sign-up; this also covers any account created before."""
+    if user.profile is None:
+        user.profile = UserProfile()
+        db.flush()
+    return user.profile
+
+
 def get_by_google_sub(db: Session, google_sub: str) -> User | None:
     return db.scalar(select(User).where(User.google_sub == google_sub))
 

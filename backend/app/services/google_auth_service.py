@@ -7,6 +7,7 @@ from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token
 
 from app.core.config import get_settings
+from app.core.exceptions import AppError
 
 
 @dataclass(frozen=True)
@@ -57,3 +58,28 @@ def verify_id_token(token: str) -> GoogleIdentity:
         email_verified=claims.get("email_verified") is True,
         name=str(claims.get("name") or email.split("@")[0]),
     )
+
+
+def verify_for_sign_in(token: str) -> GoogleIdentity:
+    """verify_id_token, with the answers the app receives when it fails.
+
+    Shared by Google sign-in and by account deletion (re-confirming with Google).
+    """
+    try:
+        identity = verify_id_token(token)
+    except GoogleSignInUnavailable:
+        raise AppError(
+            503,
+            "google_sign_in_unavailable",
+            "Google sign-in is not available right now. Please try again later.",
+        ) from None
+    except InvalidGoogleToken:
+        raise AppError(
+            401, "invalid_google_token", "Google sign-in failed. Please try again."
+        ) from None
+    if not identity.email_verified:
+        # possible for Google accounts created with a non-Gmail address that was never confirmed
+        raise AppError(
+            401, "google_email_not_verified", "The email of this Google account is not verified."
+        )
+    return identity

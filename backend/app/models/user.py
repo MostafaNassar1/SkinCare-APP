@@ -77,6 +77,9 @@ class UserProfile(Base):
     # excludes unsafe ingredients (e.g. retinoids) from routines
     is_pregnant_or_breastfeeding: Mapped[bool] = mapped_column(server_default=false())
     other_allergies_notes: Mapped[str | None] = mapped_column(Text)
+    # free-text notes about the user's skin (migration 0004); shown to the user and shared with a
+    # clinic only when they book an appointment; the rules engine does not read them
+    skin_notes: Mapped[str | None] = mapped_column(String(1000))
     updated_at: Mapped[UpdatedAt]
 
     user: Mapped[User] = relationship(back_populates="profile")

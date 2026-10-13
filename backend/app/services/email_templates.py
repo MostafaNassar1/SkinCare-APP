@@ -50,3 +50,22 @@ def password_reset_code_email(to: str, name: str, code: str, minutes: int) -> Em
         intro="Enter this code in the app to choose a new password:",
         minutes=minutes,
     )
+
+
+def account_deleted_email(to: str, name: str) -> Email:
+    """Sent after deletion: if someone else did it, the owner finds out immediately."""
+    app_name = get_settings().email_from_name
+    message = (
+        "Your SkinCare account and all its data (profile, skin quiz, allergies, scans, routines) "
+        "have been permanently deleted."
+    )
+    warning = "If you did not do this, someone else had access to your account."
+    text = f"Hi {name},\n\n{message}\n\n{warning}\n\n{app_name}"
+    html = f"""\
+<div style="font-family: Arial, sans-serif; max-width: 480px; margin: auto; color: #222;">
+  <h2 style="color: #1F4E79;">{escape(app_name)}</h2>
+  <p>Hi {escape(name)},</p>
+  <p>{escape(message)}</p>
+  <p style="color: #777; font-size: 13px;">{escape(warning)}</p>
+</div>"""
+    return Email(to=to, subject="Your SkinCare account was deleted", text=text, html=html)

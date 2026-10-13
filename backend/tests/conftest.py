@@ -31,8 +31,10 @@ from sqlalchemy.orm import Session  # noqa: E402
 
 from app.core.config import get_settings  # noqa: E402
 from app.core.dependencies import get_db  # noqa: E402
+from app.core.security import create_access_token, hash_password  # noqa: E402
 from app.db.session import engine  # noqa: E402
 from app.main import app  # noqa: E402
+from app.models import User, UserProfile  # noqa: E402
 from app.services import email_service  # noqa: E402
 from app.services.email_service import Email  # noqa: E402
 from tests.google_fake import CLIENT_ID as GOOGLE_CLIENT_ID  # noqa: E402
@@ -119,3 +121,24 @@ def fake_google(monkeypatch) -> FakeGoogle:
     monkeypatch.setattr(id_token, "_fetch_certs", lambda request, url: google.certs)
     monkeypatch.setattr(get_settings(), "google_client_ids", [GOOGLE_CLIENT_ID])
     return google
+
+
+@pytest.fixture
+def app_user(db: Session) -> User:
+    """A verified email/password user with an empty profile, created directly in the database."""
+    user = User(
+        full_name="Test User",
+        email="user@example.com",
+        password_hash=hash_password("long-enough-1"),
+        email_verified=True,
+        profile=UserProfile(),
+    )
+    db.add(user)
+    db.flush()
+    return user
+
+
+@pytest.fixture
+def user_headers(app_user: User) -> dict[str, str]:
+    """Authorization header with a valid access token for app_user."""
+    return {"Authorization": f"Bearer {create_access_token(app_user.id, 'user')}"}
