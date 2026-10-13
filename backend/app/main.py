@@ -9,6 +9,7 @@ from app.routes import (
     admin_auth_routes,
     auth_routes,
     health_routes,
+    ingredient_routes,
     profile_routes,
     skin_quiz_routes,
 )
@@ -39,6 +40,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(admin_auth_routes.router)
     app.include_router(profile_routes.router)
     app.include_router(skin_quiz_routes.router)
+    app.include_router(ingredient_routes.router)
     return app
 
 
