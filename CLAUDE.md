@@ -87,6 +87,10 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   `DELETE /me/devices/{token}` (at logout), `DELETE /me` {password | google_id_token} → hard
   delete via ON DELETE CASCADE + "account deleted" email; 403 `reauthentication_failed` on a wrong
   proof. Shared test fixtures: `app_user`, `user_headers` (tests/conftest.py).
+- Reference endpoints (Step 8, public): `GET /skin-concerns`, `GET /ingredients`,
+  `GET /achievements` send `Cache-Control: public, max-age=3600` (dependency `reference_cache`;
+  never on personal data or errors). `GET /me/achievements` = every active badge with
+  earned/earned_at (progress + automatic awarding come in Step 9).
 - No login rate limiting (user's decision): list it as a known limitation in the report.
 - Settings added in Step 5: `BCRYPT_ROUNDS` (default 12; tests use 4 for speed),
   `EMAIL_CHECK_DELIVERABILITY` (DNS domain check at sign-up, `services/email_domain_service.py`;
@@ -182,10 +186,13 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
 - Phase 2 Step 7 (profile, skin quiz, allergies + ingredient list, location, devices, delete
   account; migration 0004 skin_notes, dev DB at 0004): done 2026-10-13 on branch
   `mostafa/feature/phase2-step7-profile`, 318 tests; PR #7 squash-merged, tag `phase2-step7`.
-- **NOW: Phase 2 Step 8** on branch `mostafa/feature/phase2-step8-reference`: reference APIs (skin concerns, achievements, weather tips; ingredients
-  already done in Step 7).
-- Later Phase 2 steps: 8 reference APIs ·
-  9 routines/logs · 10 clinics/appointments/Overpass · 11 notifications/calendar.
+- Phase 2 Step 8 (reference APIs: skin concerns, achievements, cache headers): done 2026-10-13
+  on branch `mostafa/feature/phase2-step8-reference`, 332 tests; PR waiting for "merge".
+  Moved on purpose: achievement progress + awarding → Step 9 (needs the streak logic);
+  weather tips endpoint + table changes → Step 11 (designed together with the forecast engine).
+- **NEXT: Phase 2 Step 9**: routines and logging APIs (the generator itself is Phase 3), streaks,
+  achievement progress and awarding.
+- Later Phase 2 steps: 10 clinics/appointments/Overpass · 11 notifications/calendar.
   Tests (pytest) inside each step.
 - Not yet assigned to a step: a background scheduler for reminders/weather/achievements
   (depends on hosting). It must also run `python -m app.scripts.cleanup_unverified` daily
