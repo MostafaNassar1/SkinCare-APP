@@ -12,32 +12,7 @@ from app.schemas.auth import GoogleAuthResponse, GoogleSignInRequest
 from app.schemas.user import UserOut
 from app.services import google_auth_service, token_service
 from app.services.email_code_service import PASSWORD_RESET, VERIFICATION
-from app.services.google_auth_service import (
-    GoogleIdentity,
-    GoogleSignInUnavailable,
-    InvalidGoogleToken,
-)
-
-
-def _verify(id_token: str) -> GoogleIdentity:
-    try:
-        identity = google_auth_service.verify_id_token(id_token)
-    except GoogleSignInUnavailable:
-        raise AppError(
-            503,
-            "google_sign_in_unavailable",
-            "Google sign-in is not available right now. Please try again later.",
-        ) from None
-    except InvalidGoogleToken:
-        raise AppError(
-            401, "invalid_google_token", "Google sign-in failed. Please try again."
-        ) from None
-    if not identity.email_verified:
-        # possible for Google accounts created with a non-Gmail address that was never confirmed
-        raise AppError(
-            401, "google_email_not_verified", "The email of this Google account is not verified."
-        )
-    return identity
+from app.services.google_auth_service import GoogleIdentity
 
 
 def _take_over_unverified(db: Session, user: User, identity: GoogleIdentity) -> None:
@@ -94,7 +69,7 @@ def _find_or_create_user(db: Session, identity: GoogleIdentity) -> tuple[User, b
 
 
 def google_sign_in(db: Session, data: GoogleSignInRequest) -> GoogleAuthResponse:
-    identity = _verify(data.id_token)
+    identity = google_auth_service.verify_for_sign_in(data.id_token)
     user, is_new_user = _find_or_create_user(db, identity)
     if not user.is_active:
         db.rollback()

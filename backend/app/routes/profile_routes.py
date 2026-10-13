@@ -1,12 +1,12 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends, Response, status
 from sqlalchemy.orm import Session
 
 from app.controllers import profile_controller
 from app.core.dependencies import CurrentUser, get_db
 from app.schemas.location import LocationOut, LocationUpdate
-from app.schemas.profile import ProfileOut, ProfileUpdate
+from app.schemas.profile import DeleteAccountRequest, ProfileOut, ProfileUpdate
 
 router = APIRouter(prefix="/me", tags=["Profile"])
 
@@ -32,3 +32,12 @@ def get_location(user: CurrentUser):
 def update_location(data: LocationUpdate, user: CurrentUser, db: DB):
     """The phone's location, stored rounded to about 1 km (for weather advice)."""
     return profile_controller.update_location(db, user, data)
+
+
+@router.delete("", status_code=status.HTTP_204_NO_CONTENT)
+def delete_account(
+    data: DeleteAccountRequest, user: CurrentUser, db: DB, background: BackgroundTasks
+):
+    """Permanently delete the account and all its data (cannot be undone)."""
+    profile_controller.delete_account(db, user, data, background)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

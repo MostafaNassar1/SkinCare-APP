@@ -1,11 +1,16 @@
 from datetime import UTC, datetime
 
+from fastapi import BackgroundTasks
 from sqlalchemy.orm import Session
 
+from app.core.exceptions import AppError
+from app.core.security import verify_password
 from app.models import User
 from app.repositories import user_repository
 from app.schemas.location import LocationOut, LocationUpdate
-from app.schemas.profile import ProfileOut, ProfileUpdate, SkinProfileOut
+from app.schemas.profile import DeleteAccountRequest, ProfileOut, ProfileUpdate, SkinProfileOut
+from app.services import email_service, google_auth_service
+from app.services.email_templates import account_deleted_email
 
 # fields of ProfileUpdate stored in user_profiles; the others are columns of users
 SKIN_PROFILE_FIELDS = {"is_pregnant_or_breastfeeding", "skin_notes"}
@@ -34,6 +39,29 @@ def get_profile(db: Session, user: User) -> ProfileOut:
             skin_notes=profile.skin_notes,
         ),
     )
+
+
+def _reauthentication_failed(message: str) -> AppError:
+    # 403, not 401: the session itself is valid, so the app must not log the user out
+    return AppError(403, "reauthentication_failed", message)
+
+
+def delete_account(
+    db: Session, user: User, data: DeleteAccountRequest, background: BackgroundTasks
+) -> None:
+    """Permanently delete the account after the owner proves it again, then email them."""
+    if data.password:
+        if user.password_hash is None or not verify_password(data.password, user.password_hash):
+            raise _reauthentication_failed("Incorrect password")
+    else:
+        identity = google_auth_service.verify_for_sign_in(data.google_id_token)
+        if user.google_sub is None or identity.sub != user.google_sub:
+            raise _reauthentication_failed("That Google account does not match this account")
+
+    email, name = user.email, user.full_name
+    user_repository.delete_account(db, user.id)
+    db.commit()
+    background.add_task(email_service.send_email, account_deleted_email(email, name))
 
 
 def get_location(user: User) -> LocationOut:

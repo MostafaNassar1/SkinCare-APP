@@ -102,3 +102,19 @@ class ProfileUpdate(BaseModel):
             if field in self.model_fields_set and getattr(self, field) is None:
                 raise ValueError(f"{field} cannot be empty")
         return self
+
+
+class DeleteAccountRequest(BaseModel):
+    """Deleting cannot be undone, so the owner proves it again: with the password, or (Google
+    accounts) by signing in with Google once more. Either one is enough."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    password: str | None = None
+    google_id_token: str | None = Field(default=None, max_length=4096)
+
+    @model_validator(mode="after")
+    def one_proof_given(self) -> "DeleteAccountRequest":
+        if not self.password and not self.google_id_token:
+            raise ValueError("Confirm with your password or by signing in with Google")
+        return self
