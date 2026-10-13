@@ -192,6 +192,15 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   weather tips endpoint + table changes → Step 11 (designed together with the forecast engine).
 - **NOW: Phase 2 Step 9** on branch `mostafa/feature/phase2-step9-routines`: routines and logging APIs (the generator itself is Phase 3), streaks,
   achievement progress and awarding.
+  Step 9 plan (proposed 2026-10-13, not started): parts 1 GET /me/routine (+ today's status;
+  dev command to create a sample routine, since the generator is Phase 3) · 2 POST/DELETE
+  /me/routine/steps/{id}/log (step must belong to the user's ACTIVE routine) · 3 GET /me/streak +
+  GET /me/routine/history · 4 achievement progress + automatic awarding + notification row.
+  Settled: "today" = the user's local date computed by the server (never sent by the app); a streak
+  is not broken until the day ends; a new routine does not reset the streak.
+  **OPEN (ask the user first):** (1) a day counts for the streak when >= 1 step is logged (+ daily
+  completion %), recommended because retinol/adapalene are "2-3 nights a week"; (2) logging allowed
+  for today and yesterday only (grace period), recommended.
 - Later Phase 2 steps: 10 clinics/appointments/Overpass · 11 notifications/calendar.
   Tests (pytest) inside each step.
 - Not yet assigned to a step: a background scheduler for reminders/weather/achievements
