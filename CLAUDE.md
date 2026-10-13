@@ -187,10 +187,10 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   account; migration 0004 skin_notes, dev DB at 0004): done 2026-10-13 on branch
   `mostafa/feature/phase2-step7-profile`, 318 tests; PR #7 squash-merged, tag `phase2-step7`.
 - Phase 2 Step 8 (reference APIs: skin concerns, achievements, cache headers): done 2026-10-13
-  on branch `mostafa/feature/phase2-step8-reference`, 332 tests; PR waiting for "merge".
+  on branch `mostafa/feature/phase2-step8-reference`, 332 tests; PR #8 squash-merged, tag `phase2-step8`.
   Moved on purpose: achievement progress + awarding → Step 9 (needs the streak logic);
   weather tips endpoint + table changes → Step 11 (designed together with the forecast engine).
-- **NEXT: Phase 2 Step 9**: routines and logging APIs (the generator itself is Phase 3), streaks,
+- **NOW: Phase 2 Step 9** on branch `mostafa/feature/phase2-step9-routines`: routines and logging APIs (the generator itself is Phase 3), streaks,
   achievement progress and awarding.
 - Later Phase 2 steps: 10 clinics/appointments/Overpass · 11 notifications/calendar.
   Tests (pytest) inside each step.
