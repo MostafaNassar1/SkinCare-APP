@@ -101,6 +101,13 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   Kaggle oily/dry set. Fitzpatrick17k/SD-198 dropped (disease datasets). Model: shared backbone,
   one sigmoid head per concern, masked loss. Licenses still to verify in Phase 3.
 - Oiliness/dryness = **hybrid (Option A)**: the skin quiz is primary, the photo is a supporting signal.
+- **Skin quiz v1 (Step 7):** 7 original questions defined only in
+  `services/skin_quiz_service.py` (served by `GET /skin-quiz`; `POST /me/skin-quiz` scores and
+  saves, retaking replaces). Rules: reactions "often" → sensitive (safety first); oil ≥ 4 and
+  oil > dry → oily; ≥ 2 T-zone signs → combination; dry ≥ 3 and dry > oil → dry; else normal.
+  The sun question (6 options) gives the Fitzpatrick type 1-6. Answers stored with a version.
+  Pregnancy "prefer not to say" leaves the flag unchanged (the user's decision, 2026-10-13;
+  Claude had suggested treating it as "yes" for ingredient safety).
 - Recommendations = **product types + ingredient + concentration** from the rules engine. No brand
   tables, no LLM. "Find nearby pharmacy" uses live Overpass data.
 - Schema v2 (26 tables) in `database/schema_v2.sql` + `seed_v2.sql`; the rules-engine algorithm is
