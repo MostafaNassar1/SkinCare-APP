@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.controllers import allergy_controller, ingredient_controller
-from app.core.dependencies import CurrentUser, get_db
+from app.core.dependencies import CurrentUser, get_db, reference_cache
 from app.schemas.ingredient import AllergiesOut, AllergiesUpdate, IngredientOut
 
 router = APIRouter(tags=["Ingredients and allergies"])
@@ -12,7 +12,11 @@ router = APIRouter(tags=["Ingredients and allergies"])
 DB = Annotated[Session, Depends(get_db)]
 
 
-@router.get("/ingredients", response_model=list[IngredientOut])
+@router.get(
+    "/ingredients",
+    response_model=list[IngredientOut],
+    dependencies=[Depends(reference_cache)],
+)
 def list_ingredients(db: DB):
     """Reference list (no login needed): the choices on the allergy screen."""
     return ingredient_controller.list_ingredients(db)

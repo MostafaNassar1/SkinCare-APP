@@ -6,12 +6,14 @@ from app.core.logging_config import setup_logging
 from app.middleware.error_handlers import register_error_handlers
 from app.middleware.logging_middleware import REQUEST_ID_HEADER, RequestLoggingMiddleware
 from app.routes import (
+    achievement_routes,
     admin_auth_routes,
     auth_routes,
     device_routes,
     health_routes,
     ingredient_routes,
     profile_routes,
+    reference_routes,
     skin_quiz_routes,
 )
 
@@ -43,6 +45,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(skin_quiz_routes.router)
     app.include_router(ingredient_routes.router)
     app.include_router(device_routes.router)
+    app.include_router(reference_routes.router)
+    app.include_router(achievement_routes.router)
     return app
 
 
