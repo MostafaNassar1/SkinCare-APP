@@ -1,7 +1,10 @@
+from datetime import UTC, datetime
+
 from sqlalchemy.orm import Session
 
 from app.models import User
 from app.repositories import user_repository
+from app.schemas.location import LocationOut, LocationUpdate
 from app.schemas.profile import ProfileOut, ProfileUpdate, SkinProfileOut
 
 # fields of ProfileUpdate stored in user_profiles; the others are columns of users
@@ -31,6 +34,23 @@ def get_profile(db: Session, user: User) -> ProfileOut:
             skin_notes=profile.skin_notes,
         ),
     )
+
+
+def get_location(user: User) -> LocationOut:
+    return LocationOut(
+        latitude=user.last_latitude,
+        longitude=user.last_longitude,
+        updated_at=user.location_updated_at,
+    )
+
+
+def update_location(db: Session, user: User, data: LocationUpdate) -> LocationOut:
+    """The area used for weather advice (already rounded to about 1 km by the schema)."""
+    user.last_latitude = data.latitude
+    user.last_longitude = data.longitude
+    user.location_updated_at = datetime.now(UTC)
+    db.commit()
+    return get_location(user)
 
 
 def update_profile(db: Session, user: User, data: ProfileUpdate) -> ProfileOut:
