@@ -15,6 +15,14 @@ def get_by_email(db: Session, email: str) -> User | None:
     return db.scalar(select(User).where(func.lower(User.email) == email.lower()))
 
 
+def get_or_create_profile(db: Session, user: User) -> UserProfile:
+    """Every account gets a profile at sign-up; this also covers any account created before."""
+    if user.profile is None:
+        user.profile = UserProfile()
+        db.flush()
+    return user.profile
+
+
 def get_by_google_sub(db: Session, google_sub: str) -> User | None:
     return db.scalar(select(User).where(User.google_sub == google_sub))
 
