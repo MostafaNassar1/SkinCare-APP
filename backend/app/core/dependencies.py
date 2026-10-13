@@ -1,7 +1,7 @@
 from collections.abc import Generator
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Response, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
@@ -75,6 +75,16 @@ def get_current_admin(
     if not admin.is_active:
         raise account_disabled()
     return admin
+
+
+REFERENCE_CACHE_SECONDS = 3600
+
+
+def reference_cache(response: Response) -> None:
+    """For reference lists that rarely change (ingredients, skin concerns, achievements): the
+    phone may reuse the answer for an hour instead of asking again. Only successful answers
+    carry this header (errors build a new response)."""
+    response.headers["Cache-Control"] = f"public, max-age={REFERENCE_CACHE_SECONDS}"
 
 
 # Short forms for route signatures, e.g. `def get_profile(user: CurrentUser): ...`
