@@ -36,3 +36,22 @@ class RoutineDayOut(BaseModel):
     scheduled_count: int  # steps scheduled for this day
     done_count: int  # of those, how many were done
     complete: bool  # all scheduled steps done: the day counts for the streak
+
+
+class StreakOut(BaseModel):
+    current_days: int  # complete days in a row up to today (or yesterday if today is not done yet)
+    longest_days: int
+    today_complete: bool
+
+
+class HistoryDayOut(BaseModel):
+    date: date
+    scheduled_count: int
+    done_count: int
+    complete: bool
+
+
+class HistoryOut(BaseModel):
+    start: date
+    end: date
+    days: list[HistoryDayOut]  # only days on which the user had a routine

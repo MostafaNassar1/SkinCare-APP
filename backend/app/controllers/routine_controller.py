@@ -1,18 +1,67 @@
-from datetime import date
+from datetime import date, timedelta
 
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import AppError
 from app.models import RoutineStep, User
 from app.repositories import ingredient_repository, routine_repository
-from app.schemas.routine import RoutineDayOut, RoutineStepOut, StepIngredientOut
-from app.services import routine_service
+from app.schemas.routine import (
+    HistoryDayOut,
+    HistoryOut,
+    RoutineDayOut,
+    RoutineStepOut,
+    StepIngredientOut,
+    StreakOut,
+)
+from app.services import routine_service, streak_service
 from app.services.local_time import user_today
 from app.services.weekdays import from_mask, is_scheduled
 
 
 def _no_routine() -> AppError:
     return AppError(404, "no_routine", "No routine yet. Take a skin scan to get your routine.")
+
+
+HISTORY_DEFAULT_DAYS = 30
+HISTORY_MAX_DAYS = 92  # about 3 months per request
+
+
+def get_streak(db: Session, user: User) -> StreakOut:
+    streak = streak_service.compute_streak(db, user, user_today(user))
+    return StreakOut(
+        current_days=streak.current_days,
+        longest_days=streak.longest_days,
+        today_complete=streak.today_complete,
+    )
+
+
+def get_history(db: Session, user: User, start: date | None, end: date | None) -> HistoryOut:
+    """The calendar: each day with done/scheduled counts and whether it was complete."""
+    today = user_today(user)
+    end = end or today
+    start = start or end - timedelta(days=HISTORY_DEFAULT_DAYS - 1)
+    if end > today:
+        raise AppError(422, "date_in_future", "The history cannot include future days.")
+    if start > end:
+        raise AppError(422, "invalid_date_range", "The start date must be before the end date.")
+    if (end - start).days + 1 > HISTORY_MAX_DAYS:
+        raise AppError(
+            422, "invalid_date_range", f"At most {HISTORY_MAX_DAYS} days can be requested."
+        )
+
+    return HistoryOut(
+        start=start,
+        end=end,
+        days=[
+            HistoryDayOut(
+                date=status.day,
+                scheduled_count=status.scheduled_count,
+                done_count=status.done_count,
+                complete=status.complete,
+            )
+            for status in streak_service.day_statuses(db, user, start, end)
+        ],
+    )
 
 
 def _step_not_found() -> AppError:

@@ -81,3 +81,16 @@ def remove_log(db: Session, *, user_id: int, step_id: int, log_date: date) -> No
             RoutineLog.log_date == log_date,
         )
     )
+
+
+def logs_between(db: Session, user_id: int, first: date, last: date) -> dict[date, set[int]]:
+    """date -> ids of the steps ticked that day, for every day in [first, last]."""
+    rows = db.execute(
+        select(RoutineLog.log_date, RoutineLog.routine_step_id).where(
+            RoutineLog.user_id == user_id, RoutineLog.log_date.between(first, last)
+        )
+    )
+    by_day: dict[date, set[int]] = {}
+    for log_date, step_id in rows:
+        by_day.setdefault(log_date, set()).add(step_id)
+    return by_day

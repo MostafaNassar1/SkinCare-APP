@@ -49,6 +49,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(reference_routes.router)
     app.include_router(achievement_routes.router)
     app.include_router(routine_routes.router)
+    app.include_router(routine_routes.streak_router)
     return app
 
 
