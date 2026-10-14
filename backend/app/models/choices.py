@@ -18,6 +18,9 @@ STEP_TIMES_OF_DAY = ("morning", "evening")
 ACHIEVEMENT_CRITERIA = ("streak_days", "scans_completed", "routine_adherence")
 
 CLINIC_SOURCES = ("osm_import", "admin_added")
+# exact OpenStreetMap type of a place on the map (migration 0006); the API groups the first three
+# as "clinics" and the last as "pharmacies"
+PLACE_CATEGORIES = ("clinic", "doctor", "hospital", "pharmacy")
 ADMIN_ROLES = ("super_admin", "moderator", "clinic_manager")
 APPOINTMENT_STATUSES = ("pending", "accepted", "rejected", "completed", "cancelled")
 CALENDAR_EVENT_TYPES = ("routine_reminder", "appointment", "custom")

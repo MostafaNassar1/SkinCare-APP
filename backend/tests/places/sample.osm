@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- A tiny hand-made OpenStreetMap file for tests (no internet, no 52 MB download). -->
+<osm version="0.6" generator="SkinCare-APP tests">
+  <node id="1" version="1" lat="33.8938" lon="35.5018">
+    <tag k="amenity" v="pharmacy"/>
+    <tag k="name" v="صيدلية مازن"/>
+    <tag k="name:en" v="Mazen Pharmacy"/>
+    <tag k="phone" v="+961 1 234567; +961 3 765432"/>
+    <tag k="opening_hours" v="Mo-Sa 08:00-22:00"/>
+    <tag k="addr:housenumber" v="12"/>
+    <tag k="addr:street" v="Hamra Street"/>
+    <tag k="addr:city" v="Beirut"/>
+  </node>
+  <node id="2" version="1" lat="33.9000" lon="35.5000">
+    <tag k="amenity" v="pharmacy"/>
+  </node>
+  <node id="3" version="1" lat="48.8566" lon="2.3522">
+    <tag k="amenity" v="pharmacy"/>
+    <tag k="name" v="Pharmacie de Paris"/>
+  </node>
+  <node id="4" version="1" lat="33.8900" lon="35.5100">
+    <tag k="amenity" v="cafe"/>
+    <tag k="name" v="Not a health place"/>
+  </node>
+  <node id="5" version="1" lat="33.8800" lon="35.4900">
+    <tag k="healthcare" v="doctor"/>
+    <tag k="name" v="عيادة الدكتور"/>
+  </node>
+  <node id="6" version="1" lat="34.4300" lon="35.8400">
+    <tag k="amenity" v="clinic"/>
+    <tag k="name" v="Care Clinic"/>
+    <tag k="website" v="https://care.example.com"/>
+  </node>
+  <node id="10" version="1" lat="33.9000" lon="35.5200"/>
+  <node id="11" version="1" lat="33.9000" lon="35.5300"/>
+  <node id="12" version="1" lat="33.9100" lon="35.5300"/>
+  <node id="13" version="1" lat="33.9100" lon="35.5200"/>
+  <way id="100" version="1">
+    <nd ref="10"/><nd ref="11"/><nd ref="12"/><nd ref="13"/><nd ref="10"/>
+    <tag k="amenity" v="hospital"/>
+    <tag k="name" v="Test Hospital"/>
+    <tag k="phone" v="+961 1 440800"/>
+  </way>
+</osm>
