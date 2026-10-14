@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, time
 from decimal import Decimal
 from typing import Any
 
@@ -12,6 +12,7 @@ from sqlalchemy import (
     Text,
     false,
     func,
+    text,
     true,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -80,6 +81,10 @@ class UserProfile(Base):
     # free-text notes about the user's skin (migration 0004); shown to the user and shared with a
     # clinic only when they book an appointment; the rules engine does not read them
     skin_notes: Mapped[str | None] = mapped_column(String(1000))
+    # routine reminders (migration 0005), in the user's time zone; sent by the scheduler (Step 11)
+    routine_reminders_enabled: Mapped[bool] = mapped_column(server_default=true())
+    morning_reminder_time: Mapped[time] = mapped_column(server_default=text("'08:00'"))
+    evening_reminder_time: Mapped[time] = mapped_column(server_default=text("'21:00'"))
     updated_at: Mapped[UpdatedAt]
 
     user: Mapped[User] = relationship(back_populates="profile")
