@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.controllers import routine_controller
 from app.core.dependencies import CurrentUser, get_db
-from app.schemas.routine import HistoryOut, RoutineDayOut, StreakOut
+from app.schemas.routine import HistoryOut, RoutineDayOut, StepLogOut, StreakOut
 
 router = APIRouter(prefix="/me/routine", tags=["Routine"])
 streak_router = APIRouter(prefix="/me", tags=["Routine"])
@@ -24,13 +24,13 @@ def get_routine_day(
     return routine_controller.get_day(db, user, day)
 
 
-@router.post("/steps/{step_id}/log", response_model=RoutineDayOut)
+@router.post("/steps/{step_id}/log", response_model=StepLogOut)
 def log_step(step_id: int, user: CurrentUser, db: DB):
-    """Mark a step as done today; returns the updated day."""
+    """Mark a step as done today; returns the updated day and any badge earned by it."""
     return routine_controller.log_step(db, user, step_id)
 
 
-@router.delete("/steps/{step_id}/log", response_model=RoutineDayOut)
+@router.delete("/steps/{step_id}/log", response_model=StepLogOut)
 def unlog_step(step_id: int, user: CurrentUser, db: DB):
     """Undo today's tick for a step; returns the updated day."""
     return routine_controller.unlog_step(db, user, step_id)

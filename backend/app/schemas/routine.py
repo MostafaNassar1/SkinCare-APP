@@ -4,6 +4,7 @@ from typing import Literal
 from pydantic import BaseModel
 
 from app.models.choices import STEP_CATEGORIES, STEP_TIMES_OF_DAY
+from app.schemas.reference import AchievementOut
 
 
 class StepIngredientOut(BaseModel):
@@ -55,3 +56,10 @@ class HistoryOut(BaseModel):
     start: date
     end: date
     days: list[HistoryDayOut]  # only days on which the user had a routine
+
+
+class StepLogOut(BaseModel):
+    """The answer to ticking / unticking a step."""
+
+    day: RoutineDayOut  # the updated day, ready for the screen
+    new_achievements: list[AchievementOut]  # badges earned by this tick: show a celebration

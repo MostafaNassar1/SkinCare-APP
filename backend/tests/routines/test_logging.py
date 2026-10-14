@@ -53,7 +53,7 @@ def test_tick_a_step_for_today(client, db, user_headers, app_user, routine, toda
     response = tick(client, user_headers, cleanse)
 
     assert response.status_code == 200
-    body = response.json()  # the updated day, ready for the screen
+    body = response.json()["day"]  # the updated day, ready for the screen
     assert body["date"] == today.isoformat()
     assert body["done_count"] == 1
     assert body["morning"][0]["done"] is True
@@ -83,7 +83,7 @@ def test_untick(client, db, user_headers, app_user, routine, today_is):
     cleanse = step_id(routine, "Cleanse", "morning")
     tick(client, user_headers, cleanse)
 
-    body = untick(client, user_headers, cleanse).json()
+    body = untick(client, user_headers, cleanse).json()["day"]
 
     assert body["done_count"] == 0
     assert log_rows(db, app_user) == []
@@ -115,7 +115,7 @@ def test_ticking_every_scheduled_step_completes_the_day(
     body = None
     for step in routine.steps:
         if step.days_of_week & (1 << day.weekday()):
-            body = tick(client, user_headers, step.id).json()
+            body = tick(client, user_headers, step.id).json()["day"]
 
     assert (body["done_count"], body["scheduled_count"], body["complete"]) == (steps, steps, True)
 

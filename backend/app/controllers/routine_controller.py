@@ -11,9 +11,11 @@ from app.schemas.routine import (
     RoutineDayOut,
     RoutineStepOut,
     StepIngredientOut,
+    StepLogOut,
     StreakOut,
 )
-from app.services import routine_service, streak_service
+from app.schemas.reference import AchievementOut
+from app.services import achievement_service, routine_service, streak_service
 from app.services.local_time import user_today
 from app.services.weekdays import from_mask, is_scheduled
 
@@ -69,7 +71,7 @@ def _step_not_found() -> AppError:
     return AppError(404, "step_not_found", "This step is not part of your current routine.")
 
 
-def log_step(db: Session, user: User, step_id: int) -> RoutineDayOut:
+def log_step(db: Session, user: User, step_id: int) -> StepLogOut:
     """Tick a step as done TODAY (there is no date parameter: past days cannot be changed)."""
     step = routine_repository.get_step_in_active_routine(db, user.id, step_id)
     if step is None:
@@ -82,11 +84,15 @@ def log_step(db: Session, user: User, step_id: int) -> RoutineDayOut:
         )
 
     routine_repository.add_log(db, user_id=user.id, step_id=step.id, log_date=today)
+    new_achievements = achievement_service.award_new(db, user, today)
     db.commit()
-    return get_day(db, user, today)
+    return StepLogOut(
+        day=get_day(db, user, today),
+        new_achievements=[AchievementOut.model_validate(a) for a in new_achievements],
+    )
 
 
-def unlog_step(db: Session, user: User, step_id: int) -> RoutineDayOut:
+def unlog_step(db: Session, user: User, step_id: int) -> StepLogOut:
     """Un-tick a step for today (e.g. tapped by mistake)."""
     step = routine_repository.get_step_in_active_routine(db, user.id, step_id)
     if step is None:
@@ -94,7 +100,8 @@ def unlog_step(db: Session, user: User, step_id: int) -> RoutineDayOut:
     today = user_today(user)
     routine_repository.remove_log(db, user_id=user.id, step_id=step.id, log_date=today)
     db.commit()
-    return get_day(db, user, today)
+    # badges already earned are kept: unticking never takes one away
+    return StepLogOut(day=get_day(db, user, today), new_achievements=[])
 
 
 def get_day(db: Session, user: User, day: date | None) -> RoutineDayOut:

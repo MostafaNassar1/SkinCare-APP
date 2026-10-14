@@ -1,6 +1,6 @@
 from datetime import date
 
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session, selectinload
 
@@ -94,3 +94,10 @@ def logs_between(db: Session, user_id: int, first: date, last: date) -> dict[dat
     for log_date, step_id in rows:
         by_day.setdefault(log_date, set()).add(step_id)
     return by_day
+
+
+def count_logs(db: Session, user_id: int) -> int:
+    """Every step the user has ever ticked (for the "routine adherence" badges)."""
+    return db.scalar(
+        select(func.count()).select_from(RoutineLog).where(RoutineLog.user_id == user_id)
+    )
