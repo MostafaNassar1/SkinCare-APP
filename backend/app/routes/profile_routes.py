@@ -7,6 +7,7 @@ from app.controllers import profile_controller
 from app.core.dependencies import CurrentUser, get_db
 from app.schemas.location import LocationOut, LocationUpdate
 from app.schemas.profile import DeleteAccountRequest, ProfileOut, ProfileUpdate
+from app.schemas.reminders import RemindersOut, RemindersUpdate
 
 router = APIRouter(prefix="/me", tags=["Profile"])
 
@@ -21,6 +22,17 @@ def get_profile(user: CurrentUser, db: DB):
 @router.patch("/profile", response_model=ProfileOut)
 def update_profile(data: ProfileUpdate, user: CurrentUser, db: DB):
     return profile_controller.update_profile(db, user, data)
+
+
+@router.get("/reminders", response_model=RemindersOut)
+def get_reminders(user: CurrentUser, db: DB):
+    return profile_controller.get_reminders(db, user)
+
+
+@router.patch("/reminders", response_model=RemindersOut)
+def update_reminders(data: RemindersUpdate, user: CurrentUser, db: DB):
+    """Routine reminder settings: on/off and the morning/evening times (user's time zone)."""
+    return profile_controller.update_reminders(db, user, data)
 
 
 @router.get("/location", response_model=LocationOut)

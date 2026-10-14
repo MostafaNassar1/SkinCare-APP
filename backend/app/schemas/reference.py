@@ -31,3 +31,4 @@ class AchievementOut(BaseModel):
 class MyAchievementOut(AchievementOut):
     earned: bool
     earned_at: datetime | None
+    progress: int  # towards criteria_value, e.g. 4 of 7 (equal to the goal once earned)

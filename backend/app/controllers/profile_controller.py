@@ -9,6 +9,7 @@ from app.models import User
 from app.repositories import user_repository
 from app.schemas.location import LocationOut, LocationUpdate
 from app.schemas.profile import DeleteAccountRequest, ProfileOut, ProfileUpdate, SkinProfileOut
+from app.schemas.reminders import RemindersOut, RemindersUpdate
 from app.services import email_service, google_auth_service
 from app.services.email_templates import account_deleted_email
 
@@ -62,6 +63,28 @@ def delete_account(
     user_repository.delete_account(db, user.id)
     db.commit()
     background.add_task(email_service.send_email, account_deleted_email(email, name))
+
+
+def get_reminders(db: Session, user: User) -> RemindersOut:
+    profile = user_repository.get_or_create_profile(db, user)
+    return RemindersOut(
+        enabled=profile.routine_reminders_enabled,
+        morning_time=profile.morning_reminder_time,
+        evening_time=profile.evening_reminder_time,
+    )
+
+
+def update_reminders(db: Session, user: User, data: RemindersUpdate) -> RemindersOut:
+    profile = user_repository.get_or_create_profile(db, user)
+    columns = {
+        "enabled": "routine_reminders_enabled",
+        "morning_time": "morning_reminder_time",
+        "evening_time": "evening_reminder_time",
+    }
+    for field, value in data.model_dump(exclude_unset=True).items():
+        setattr(profile, columns[field], value)
+    db.commit()
+    return get_reminders(db, user)
 
 
 def get_location(user: User) -> LocationOut:

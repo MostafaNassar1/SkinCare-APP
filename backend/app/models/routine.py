@@ -1,6 +1,7 @@
 from datetime import date
 
 from sqlalchemy import (
+    CheckConstraint,
     ForeignKey,
     Index,
     SmallInteger,
@@ -95,6 +96,7 @@ class RoutineStep(Base):
     __table_args__ = (
         check_in("time_of_day", STEP_TIMES_OF_DAY),
         check_in("step_category", STEP_CATEGORIES),
+        CheckConstraint("days_of_week BETWEEN 1 AND 127", name="days_of_week_check"),
         UniqueConstraint("routine_id", "time_of_day", "step_order"),
     )
 
@@ -114,6 +116,10 @@ class RoutineStep(Base):
         ForeignKey("ingredients.id", ondelete="SET NULL")
     )
     recommended_concentration: Mapped[str | None] = mapped_column(String(50))
+    # the weekdays this step is done (migration 0005), one bit per day: Monday = 1, Tuesday = 2,
+    # Wednesday = 4 ... Sunday = 64; 127 = every day. E.g. retinol "2-3 nights a week" = Mon, Wed,
+    # Fri = 21. A streak day needs every step scheduled for that day. See services/weekdays.py.
+    days_of_week: Mapped[int] = mapped_column(SmallInteger, server_default=text("127"))
 
     routine: Mapped[Routine] = relationship(back_populates="steps")
 
