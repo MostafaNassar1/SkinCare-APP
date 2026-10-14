@@ -209,8 +209,8 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   weather tips endpoint + table changes → Step 11 (designed together with the forecast engine).
 - Phase 2 Step 9 (reminder settings, scheduled days, routine view, logging, streaks, history,
   achievement progress + awarding; migration 0005): done 2026-10-14 on branch
-  `mostafa/feature/phase2-step9-routines`, 403 tests; PR waiting for the user's "merge".
-- **NEXT: Phase 2 Step 10**: clinics, doctors, appointments + Overpass proxy (clinics/pharmacies).
+  `mostafa/feature/phase2-step9-routines`, 403 tests; PR #9 squash-merged, tag `phase2-step9`.
+- **NOW: Phase 2 Step 10** on branch `mostafa/feature/phase2-step10-clinics`: clinics, doctors, appointments + Overpass proxy (clinics/pharmacies).
 - Later Phase 2 steps: 11 notifications/calendar/daily forecast/reminder sending/weather tips.
   Tests (pytest) inside each step.
 - Not yet assigned to a step: a background scheduler for reminders/weather/achievements
