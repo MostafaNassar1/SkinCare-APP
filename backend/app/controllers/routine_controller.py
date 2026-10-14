@@ -15,6 +15,39 @@ def _no_routine() -> AppError:
     return AppError(404, "no_routine", "No routine yet. Take a skin scan to get your routine.")
 
 
+def _step_not_found() -> AppError:
+    # same answer for a step of another user, of an old routine, or that does not exist
+    return AppError(404, "step_not_found", "This step is not part of your current routine.")
+
+
+def log_step(db: Session, user: User, step_id: int) -> RoutineDayOut:
+    """Tick a step as done TODAY (there is no date parameter: past days cannot be changed)."""
+    step = routine_repository.get_step_in_active_routine(db, user.id, step_id)
+    if step is None:
+        raise _step_not_found()
+    today = user_today(user)
+    if not is_scheduled(step.days_of_week, today):
+        # e.g. a retinoid advised 2-3 nights a week, on one of its rest days
+        raise AppError(
+            409, "step_not_scheduled_today", "This step is not part of today's routine."
+        )
+
+    routine_repository.add_log(db, user_id=user.id, step_id=step.id, log_date=today)
+    db.commit()
+    return get_day(db, user, today)
+
+
+def unlog_step(db: Session, user: User, step_id: int) -> RoutineDayOut:
+    """Un-tick a step for today (e.g. tapped by mistake)."""
+    step = routine_repository.get_step_in_active_routine(db, user.id, step_id)
+    if step is None:
+        raise _step_not_found()
+    today = user_today(user)
+    routine_repository.remove_log(db, user_id=user.id, step_id=step.id, log_date=today)
+    db.commit()
+    return get_day(db, user, today)
+
+
 def get_day(db: Session, user: User, day: date | None) -> RoutineDayOut:
     """The routine as it applied on `day` (default: the user's today), with what was done."""
     today = user_today(user)

@@ -1,6 +1,7 @@
 from datetime import date
 
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session, selectinload
 
 from app.models import Routine, RoutineLog, RoutineStep
@@ -47,5 +48,36 @@ def logged_step_ids(db: Session, user_id: int, log_date: date) -> set[int]:
             select(RoutineLog.routine_step_id).where(
                 RoutineLog.user_id == user_id, RoutineLog.log_date == log_date
             )
+        )
+    )
+
+
+def get_step_in_active_routine(db: Session, user_id: int, step_id: int) -> RoutineStep | None:
+    """The step, only if it belongs to this user's ACTIVE routine (never someone else's)."""
+    return db.scalar(
+        select(RoutineStep)
+        .join(Routine, Routine.id == RoutineStep.routine_id)
+        .where(RoutineStep.id == step_id, Routine.user_id == user_id, Routine.is_active)
+    )
+
+
+def add_log(db: Session, *, user_id: int, step_id: int, log_date: date) -> None:
+    """Tick a step for a day. ON CONFLICT DO NOTHING: ticking twice (or two taps at the same
+    moment) leaves exactly one row, thanks to the unique (step, user, date) rule."""
+    db.execute(
+        pg_insert(RoutineLog)
+        .values(routine_step_id=step_id, user_id=user_id, log_date=log_date)
+        .on_conflict_do_nothing(
+            index_elements=["routine_step_id", "user_id", "log_date"]
+        )
+    )
+
+
+def remove_log(db: Session, *, user_id: int, step_id: int, log_date: date) -> None:
+    db.execute(
+        delete(RoutineLog).where(
+            RoutineLog.routine_step_id == step_id,
+            RoutineLog.user_id == user_id,
+            RoutineLog.log_date == log_date,
         )
     )
