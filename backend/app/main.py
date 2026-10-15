@@ -12,6 +12,7 @@ from app.routes import (
     device_routes,
     health_routes,
     ingredient_routes,
+    places_routes,
     profile_routes,
     reference_routes,
     routine_routes,
@@ -50,6 +51,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(achievement_routes.router)
     app.include_router(routine_routes.router)
     app.include_router(routine_routes.streak_router)
+    app.include_router(places_routes.router)
     return app
 
 
