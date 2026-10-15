@@ -232,9 +232,9 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   `mostafa/feature/phase2-step9-routines`, 403 tests; PR #9 squash-merged, tag `phase2-step9`.
 - Phase 2 Step 10 (OSM import of Lebanon's clinics & pharmacies, map endpoints, appointment
   tracker; migrations 0006-0007): done 2026-10-15 on branch `mostafa/feature/phase2-step10-clinics`;
-  PR waiting for the user's "merge". Bug PR #10 (weekday-dependent Step 9 tests) merged; awarding
+  PR #11 squash-merged, tag `phase2-step10`. Bug PR #10 (weekday-dependent Step 9 tests) merged; awarding
   tests now run on all 7 weekdays.
-- **NEXT: Phase 2 Step 11**: notifications, calendar, daily skin forecast (11:00), sending routine
+- **NOW: Phase 2 Step 11** on branch `mostafa/feature/phase2-step11-notifications`: notifications, calendar, daily skin forecast (11:00), sending routine
   reminders / badge pushes / appointment reminders (day before + 2 h), background scheduler
   (decision needed), weather tips table changes.
 - Proposed (not yet agreed): a Step 12 for admin APIs (rules, ingredients, tips, users, reports,
