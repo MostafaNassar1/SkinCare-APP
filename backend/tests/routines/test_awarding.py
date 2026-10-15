@@ -12,10 +12,14 @@ from app.services.weekdays import is_scheduled
 from tests.routines.conftest import days_ago, log
 
 
-@pytest.fixture
-def today(monkeypatch, app_user: User) -> date:
-    """Freeze "today" (yesterday's real date: always after the routine started)."""
-    day = days_ago(app_user, 1)
+@pytest.fixture(params=range(1, 8), ids=lambda n: f"{n}-days-ago")
+def today(request, monkeypatch, app_user: User) -> date:
+    """Freeze "today" on each of the last 7 days in turn, so every test runs on every weekday.
+
+    The number of steps per day depends on the weekday (the retinoid is Mon/Wed/Fri only), so a
+    test that passes on one day can fail on another; running all 7 catches that (2026-10-15).
+    """
+    day = days_ago(app_user, request.param)
     monkeypatch.setattr(routine_controller, "user_today", lambda user: day)
     monkeypatch.setattr(achievement_controller, "user_today", lambda user: day)
     return day
@@ -54,7 +58,10 @@ def test_completing_the_third_day_earns_the_3_day_streak(
 
     earned = tick_all_today(client, user_headers, routine, today)
 
-    assert earned == ["3-Day Streak"]  # announced once, on the tick that completed the day
+    # announced exactly once, on the tick that completed the day. (Other badges may be earned
+    # too: on some weekdays these 3 days reach the 20 ticks of "Consistent Care".)
+    assert earned.count("3-Day Streak") == 1
+    assert "7-Day Streak" not in earned
     badge = my_badges(client, user_headers)["3-Day Streak"]
     assert badge["earned"] is True and badge["progress"] == 3
 
@@ -63,10 +70,11 @@ def test_a_notification_is_saved_for_the_badge(client, db, user_headers, app_use
     complete_past(db, app_user, routine, today, range(1, 3))
     tick_all_today(client, user_headers, routine, today)
 
-    notification = db.query(Notification).filter_by(user_id=app_user.id).one()
+    notifications = db.query(Notification).filter_by(user_id=app_user.id).all()
+    streak_notes = [n for n in notifications if "3-Day Streak" in n.message]
 
-    assert notification.type == "achievement"
-    assert "3-Day Streak" in notification.message
+    assert len(streak_notes) == 1
+    assert streak_notes[0].type == "achievement"
 
 
 def test_progress_shows_the_current_streak(client, db, user_headers, app_user, routine, today):
@@ -107,8 +115,9 @@ def test_badges_are_kept_and_never_awarded_twice(
 
     assert my_badges(client, user_headers)["3-Day Streak"]["earned"] is True  # ...badge kept
     assert again["new_achievements"] == []  # not announced a second time
-    count = db.query(UserAchievement).filter_by(user_id=app_user.id).count()
-    assert count == 1
+    three_day = db.query(Achievement).filter_by(title="3-Day Streak").one()
+    count = db.query(UserAchievement).filter_by(user_id=app_user.id, achievement_id=three_day.id)
+    assert count.count() == 1
 
 
 # ---------- Other badge types ----------
