@@ -22,7 +22,9 @@ CLINIC_SOURCES = ("osm_import", "admin_added")
 # as "clinics" and the last as "pharmacies"
 PLACE_CATEGORIES = ("clinic", "doctor", "hospital", "pharmacy")
 ADMIN_ROLES = ("super_admin", "moderator", "clinic_manager")
-APPOINTMENT_STATUSES = ("pending", "accepted", "rejected", "completed", "cancelled")
+# "scheduled" (migration 0007): a real appointment the user booked by phone and recorded in the
+# app (no in-app booking). pending/accepted/rejected are kept for possible future partner clinics.
+APPOINTMENT_STATUSES = ("scheduled", "pending", "accepted", "rejected", "completed", "cancelled")
 CALENDAR_EVENT_TYPES = ("routine_reminder", "appointment", "custom")
 
 NOTIFICATION_TYPES = ("reminder", "weather_alert", "achievement", "appointment_update")

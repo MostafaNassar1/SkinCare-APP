@@ -8,6 +8,7 @@ from app.middleware.logging_middleware import REQUEST_ID_HEADER, RequestLoggingM
 from app.routes import (
     achievement_routes,
     admin_auth_routes,
+    appointment_routes,
     auth_routes,
     device_routes,
     health_routes,
@@ -52,6 +53,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(routine_routes.router)
     app.include_router(routine_routes.streak_router)
     app.include_router(places_routes.router)
+    app.include_router(appointment_routes.router)
     return app
 
 
