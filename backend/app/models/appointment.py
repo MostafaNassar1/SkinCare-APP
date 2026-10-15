@@ -1,10 +1,11 @@
 from datetime import datetime
 
 from sqlalchemy import CheckConstraint, ForeignKey, ForeignKeyConstraint, Index, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, CreatedAt, IntPK, UpdatedAt, check_in
 from app.models.choices import APPOINTMENT_STATUSES, CALENDAR_EVENT_TYPES
+from app.models.clinic import Clinic
 
 
 class Appointment(Base):
@@ -25,9 +26,11 @@ class Appointment(Base):
     id: Mapped[IntPK]
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     clinic_id: Mapped[int] = mapped_column(ForeignKey("clinics.id", ondelete="RESTRICT"))
-    doctor_id: Mapped[int | None]
-    requested_datetime: Mapped[datetime]
-    status: Mapped[str] = mapped_column(String(20), server_default="pending")
+    doctor_id: Mapped[int | None]  # partner-clinic doctors (future work; unused by the tracker)
+    requested_datetime: Mapped[datetime]  # when the appointment is
+    status: Mapped[str] = mapped_column(String(20), server_default="scheduled")
+    # the doctor the user will see, as free text (migration 0007), e.g. "Dr. Haddad"
+    doctor_name: Mapped[str | None] = mapped_column(String(150))
     notes: Mapped[str | None] = mapped_column(Text)  # from the user
     response_note: Mapped[str | None] = mapped_column(Text)  # from the clinic manager
     responded_by_admin_id: Mapped[int | None] = mapped_column(
@@ -36,6 +39,9 @@ class Appointment(Base):
     responded_at: Mapped[datetime | None]
     created_at: Mapped[CreatedAt]
     updated_at: Mapped[UpdatedAt]
+
+    # the real place (imported from OpenStreetMap) where the appointment is
+    clinic: Mapped["Clinic"] = relationship()
 
 
 class CalendarEvent(Base):
