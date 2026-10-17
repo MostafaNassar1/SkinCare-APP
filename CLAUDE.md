@@ -272,11 +272,13 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   tracker; migrations 0006-0007): done 2026-10-15 on branch `mostafa/feature/phase2-step10-clinics`;
   PR #11 squash-merged, tag `phase2-step10`. Bug PR #10 (weekday-dependent Step 9 tests) merged; awarding
   tests now run on all 7 weekdays.
-- **NOW: Phase 2 Step 11** on branch `mostafa/feature/phase2-step11-notifications`: notifications, calendar, daily skin forecast (11:00), sending routine
-  reminders / badge pushes / appointment reminders (day before + 2 h), background scheduler,
-  weather tips table changes. Part 1 (inbox + push service, migration 0008), Part 2 (scheduler)
-  Part 3 (daily skin forecast, migration 0009) and Part 4 (calendar + .ics) done: step finished,
-  waiting for the PR / merge.
-- Proposed (not yet agreed): a Step 12 for admin APIs (rules, ingredients, tips, users, reports,
-  audit logs), needed by the React admin in Phase 7.
-  Tests (pytest) inside each step.
+- Phase 2 Step 11 (notification inbox + push service, background scheduler with routine /
+  appointment reminders and maintenance jobs, daily skin forecast, calendar + .ics; migrations
+  0008-0009): done 2026-10-17 on branch `mostafa/feature/phase2-step11-notifications`, 673 tests;
+  PR #12 squash-merged, tag `phase2-step11`.
+- **Phase 2 (backend) COMPLETE on 2026-10-17** (Steps 1-11, 673 tests).
+- **Admin APIs moved to Phase 7 (the user's decision, 2026-10-17):** built together with the React
+  admin (rules, ingredients + conflicts, weather tips, badges, users, audit logs); scan reports need
+  Phase 3 data. Only admin login/refresh/logout/me exist so far.
+- **NEXT: Phase 3** (AI model on the public datasets, scans + Cloudinary upload, rules engine that
+  generates routines; licences of the datasets to verify). Not started: plan it with the user first.
