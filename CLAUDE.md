@@ -118,7 +118,8 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   constraints their full convention name with `op.f(...)`). `0003` = email_tokens.attempts +
   non-unique token_hash. `0004` = user_profiles.skin_notes. `0005` = routine_steps.days_of_week +
   user_profiles reminder settings. `0006` = clinics.category. `0007` = appointments status
-  "scheduled" (default) + doctor_name. Dev DB is at `0007` with the 1,332 imported places.
+  "scheduled" (default) + doctor_name. `0008` = notifications title + dedupe_key. Dev DB is at
+  `0008` with the 1,332 imported places.
 - Run: `cd backend; .venv\Scripts\activate; uvicorn app.main:app --reload` → http://127.0.0.1:8000/docs
 - Tests: `cd backend; .venv\Scripts\activate; pytest`. `tests/conftest.py` recreates
   `skincare_app_test` (name must end in `_test`) with `alembic upgrade head` each run, drops it at
@@ -190,8 +191,14 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   Step 11; needs the background scheduler, a richer `weather_skin_tips` (skin type, thresholds,
   priority, new conditions like windy/polluted: migration) and a user on/off setting.
   Step 7 already collects its inputs (location, skin quiz, FCM devices).
-- Open decisions: hosting, calendar type, Cloudinary upload flow, background scheduler
-  (required by the daily forecast); weather = Open-Meteo.
+- **Scheduler & push (decided 2026-10-17, Step 11):** APScheduler inside the backend for now; the
+  "run what is due" logic is written once so an external free trigger (GitHub Actions / cron-job.org
+  calling a protected endpoint) can be added if the host sleeps. Push = `PUSH_BACKEND=console`
+  (printed in the log + saved in the inbox) until Phase 4, when the Firebase project is created with
+  the Flutter app. Every automatic notification has a `dedupe_key` (unique per user) so nothing is
+  ever sent twice; pushes are sent only after the commit (`notification_service.notify` →
+  commit → `push_all`).
+- Open decisions: hosting, calendar type, Cloudinary upload flow; weather = Open-Meteo.
 - The local DB password is the PostgreSQL default (same as the username): fine for local
   development only, **must be changed to a strong one before hosting**.
 

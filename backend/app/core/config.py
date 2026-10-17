@@ -54,6 +54,10 @@ class Settings(BaseSettings):
     smtp_password: SecretStr = SecretStr("")  # Gmail App Password; SecretStr hides it in logs
     email_from_name: str = "SkinCare App"
 
+    # Push notifications: "console" prints them in the server log. Firebase (FCM) sending is added
+    # in Phase 4 with the Flutter app (decided 2026-10-17).
+    push_backend: Literal["console"] = "console"
+
     @field_validator("smtp_password", mode="before")
     @classmethod
     def remove_spaces(cls, value: object) -> object:
