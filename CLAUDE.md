@@ -198,6 +198,15 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   the Flutter app. Every automatic notification has a `dedupe_key` (unique per user) so nothing is
   ever sent twice; pushes are sent only after the commit (`notification_service.notify` →
   commit → `push_all`).
+- **Scheduler (Step 11 Part 2):** `app/core/scheduler.py` (started in `create_app`'s lifespan when
+  `SCHEDULER_ENABLED`, off in tests) runs every 5 min `scheduler_service.run_due(db, now)` (routine
+  reminders at each user's local times listing only steps not yet done, 60-min late window, keys
+  `routine-morning|evening:YYYY-MM-DD`; appointment reminders 24 h + 2 h before, type
+  `appointment_update`, key includes the time so a moved appointment is reminded again, skipped if
+  recorded after the reminder moment), daily 03:00 `maintenance_service.cleanup_unverified`, Sunday
+  04:00 `maintenance_service.refresh_places` (Asia/Beirut). Manual: `python -m
+  app.scripts.run_scheduler_once [--now ISO]`. External trigger: `POST /internal/scheduler/run`
+  with header `X-Scheduler-Key` = `SCHEDULER_SECRET` (404 otherwise, hidden from /docs).
 - Open decisions: hosting, calendar type, Cloudinary upload flow; weather = Open-Meteo.
 - The local DB password is the PostgreSQL default (same as the username): fine for local
   development only, **must be changed to a strong one before hosting**.
@@ -242,11 +251,9 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   PR #11 squash-merged, tag `phase2-step10`. Bug PR #10 (weekday-dependent Step 9 tests) merged; awarding
   tests now run on all 7 weekdays.
 - **NOW: Phase 2 Step 11** on branch `mostafa/feature/phase2-step11-notifications`: notifications, calendar, daily skin forecast (11:00), sending routine
-  reminders / badge pushes / appointment reminders (day before + 2 h), background scheduler
-  (decision needed), weather tips table changes.
+  reminders / badge pushes / appointment reminders (day before + 2 h), background scheduler,
+  weather tips table changes. Part 1 (inbox + push service, migration 0008) and Part 2 (scheduler)
+  done; next Part 3 (daily skin forecast), Part 4 (calendar).
 - Proposed (not yet agreed): a Step 12 for admin APIs (rules, ingredients, tips, users, reports,
   audit logs), needed by the React admin in Phase 7.
   Tests (pytest) inside each step.
-- Not yet assigned to a step: a background scheduler for reminders/weather/achievements
-  (depends on hosting). It must also run `python -m app.scripts.cleanup_unverified` daily
-  (deletes email sign-ups still unverified after 24 h; `--dry-run`, `--hours N`).

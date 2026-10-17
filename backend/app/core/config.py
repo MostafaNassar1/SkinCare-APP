@@ -58,6 +58,18 @@ class Settings(BaseSettings):
     # in Phase 4 with the Flutter app (decided 2026-10-17).
     push_backend: Literal["console"] = "console"
 
+    # Background scheduler (APScheduler inside the backend, decided 2026-10-17): routine and
+    # appointment reminders every few minutes, nightly clean-up, weekly map refresh. Off in tests,
+    # which call the jobs directly with a chosen "now".
+    scheduler_enabled: bool = True
+    scheduler_interval_minutes: int = Field(default=5, ge=1, le=60)
+    # time zone of the maintenance jobs (03:00 clean-up, Sunday 04:00 map refresh): the app's
+    # users are in Lebanon. Reminders always use each user's own time zone.
+    scheduler_timezone: str = "Asia/Beirut"
+    # Key for POST /internal/scheduler/run (an external trigger such as cron-job.org, if the host
+    # puts the server to sleep). Empty = the endpoint does not exist (404).
+    scheduler_secret: SecretStr = SecretStr("")
+
     @field_validator("smtp_password", mode="before")
     @classmethod
     def remove_spaces(cls, value: object) -> object:

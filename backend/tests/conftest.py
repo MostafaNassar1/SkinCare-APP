@@ -20,6 +20,9 @@ os.environ["EMAIL_CHECK_DELIVERABILITY"] = "false"
 os.environ["BCRYPT_ROUNDS"] = "4"
 # never send real emails from tests, whatever .env says (the outbox fixture also catches them)
 os.environ["EMAIL_BACKEND"] = "console"
+# no background jobs during tests: they call the scheduler functions directly
+os.environ["SCHEDULER_ENABLED"] = "false"
+os.environ["SCHEDULER_SECRET"] = ""
 
 import pytest  # noqa: E402
 from alembic import command  # noqa: E402

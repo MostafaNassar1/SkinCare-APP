@@ -2,9 +2,9 @@ from datetime import date
 
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session, contains_eager, selectinload
 
-from app.models import Routine, RoutineLog, RoutineStep
+from app.models import Routine, RoutineLog, RoutineStep, User, UserProfile
 
 
 def list_for_user(db: Session, user_id: int) -> list[Routine]:
@@ -100,4 +100,23 @@ def count_logs(db: Session, user_id: int) -> int:
     """Every step the user has ever ticked (for the "routine adherence" badges)."""
     return db.scalar(
         select(func.count()).select_from(RoutineLog).where(RoutineLog.user_id == user_id)
+    )
+
+
+def list_reminder_candidates(db: Session) -> list[tuple[User, Routine]]:
+    """Users who may get a routine reminder: active, verified, reminders on, with an active
+    routine. Loaded in one go (profile and steps included) for the scheduler."""
+    return list(
+        db.execute(
+            select(User, Routine)
+            .join(UserProfile, UserProfile.user_id == User.id)
+            .join(Routine, (Routine.user_id == User.id) & Routine.is_active)
+            .where(
+                User.is_active,
+                User.email_verified,
+                UserProfile.routine_reminders_enabled,
+            )
+            .options(contains_eager(User.profile), selectinload(Routine.steps))
+            .order_by(User.id)
+        )
     )
