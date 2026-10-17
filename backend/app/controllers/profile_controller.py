@@ -69,6 +69,7 @@ def get_reminders(db: Session, user: User) -> RemindersOut:
     profile = user_repository.get_or_create_profile(db, user)
     return RemindersOut(
         enabled=profile.routine_reminders_enabled,
+        daily_forecast=profile.daily_forecast_enabled,
         morning_time=profile.morning_reminder_time,
         evening_time=profile.evening_reminder_time,
     )
@@ -78,6 +79,7 @@ def update_reminders(db: Session, user: User, data: RemindersUpdate) -> Reminder
     profile = user_repository.get_or_create_profile(db, user)
     columns = {
         "enabled": "routine_reminders_enabled",
+        "daily_forecast": "daily_forecast_enabled",
         "morning_time": "morning_reminder_time",
         "evening_time": "evening_reminder_time",
     }

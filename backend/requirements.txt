@@ -11,6 +11,7 @@ google-auth==2.61.0
 requests==2.34.2
 tzdata==2026.5
 osmium==4.3.1
+APScheduler==3.11.3
 
 # Testing
 pytest==9.1.1

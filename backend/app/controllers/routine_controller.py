@@ -15,7 +15,12 @@ from app.schemas.routine import (
     StreakOut,
 )
 from app.schemas.reference import AchievementOut
-from app.services import achievement_service, routine_service, streak_service
+from app.services import (
+    achievement_service,
+    notification_service,
+    routine_service,
+    streak_service,
+)
 from app.services.local_time import user_today
 from app.services.weekdays import from_mask, is_scheduled
 
@@ -84,11 +89,12 @@ def log_step(db: Session, user: User, step_id: int) -> StepLogOut:
         )
 
     routine_repository.add_log(db, user_id=user.id, step_id=step.id, log_date=today)
-    new_achievements = achievement_service.award_new(db, user, today)
+    awarded = achievement_service.award_new(db, user, today)
     db.commit()
+    notification_service.push_all(db, awarded.notifications)  # only after the commit
     return StepLogOut(
         day=get_day(db, user, today),
-        new_achievements=[AchievementOut.model_validate(a) for a in new_achievements],
+        new_achievements=[AchievementOut.model_validate(a) for a in awarded.achievements],
     )
 
 

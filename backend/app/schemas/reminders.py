@@ -4,7 +4,8 @@ from pydantic import BaseModel, ConfigDict, field_serializer, field_validator
 
 
 class RemindersOut(BaseModel):
-    enabled: bool
+    enabled: bool  # routine reminders
+    daily_forecast: bool  # the 11:00 skin forecast push
     morning_time: time  # in the user's time zone
     evening_time: time
 
@@ -19,6 +20,7 @@ class RemindersUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     enabled: bool | None = None
+    daily_forecast: bool | None = None
     morning_time: time | None = None
     evening_time: time | None = None
 
@@ -31,11 +33,11 @@ class RemindersUpdate(BaseModel):
             raise ValueError("Send the local time without a time zone, e.g. 21:00")
         return value.replace(second=0, microsecond=0)
 
-    @field_validator("enabled")
+    @field_validator("enabled", "daily_forecast")
     @classmethod
-    def enabled_not_empty(cls, value: bool | None) -> bool:
+    def switch_not_empty(cls, value: bool | None) -> bool:
         if value is None:
-            raise ValueError("enabled must be true or false")
+            raise ValueError("Must be true or false")
         return value
 
     @field_validator("morning_time")

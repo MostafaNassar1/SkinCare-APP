@@ -5,8 +5,8 @@ r"""Import (or refresh) the real clinics and pharmacies of Lebanon from OpenStre
     python -m app.scripts.import_osm_places --file lebanon-latest.osm.pbf
     python -m app.scripts.import_osm_places --dry-run    # only counts, changes nothing
 
-Run it again any time (e.g. weekly; later the scheduler): known places are updated, new ones
-added, vanished ones marked inactive. The downloaded file is deleted afterwards.
+Run it again any time (the scheduler also does it every Sunday at 04:00): known places are
+updated, new ones added, vanished ones marked inactive. The downloaded file is deleted afterwards.
 """
 
 import argparse

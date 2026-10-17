@@ -3,7 +3,12 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
-from app.models.choices import ACHIEVEMENT_CRITERIA, DETECTION_METHODS
+from app.models.choices import (
+    ACHIEVEMENT_CRITERIA,
+    DETECTION_METHODS,
+    SKIN_TYPES,
+    WEATHER_CONDITIONS,
+)
 
 
 class SkinConcernOut(BaseModel):
@@ -32,3 +37,12 @@ class MyAchievementOut(AchievementOut):
     earned: bool
     earned_at: datetime | None
     progress: int  # towards criteria_value, e.g. 4 of 7 (equal to the goal once earned)
+
+
+class WeatherTipOut(BaseModel):
+    id: int
+    weather_condition: Literal[WEATHER_CONDITIONS]  # e.g. "humid"
+    skin_type: Literal[SKIN_TYPES] | None  # None = for every skin type
+    related_concern: str | None  # skin concern code, e.g. "oiliness"
+    priority: int
+    tip_text: str

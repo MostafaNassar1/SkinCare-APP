@@ -12,23 +12,43 @@ def test_default_reminders_are_8_am_and_9_pm(client: TestClient, user_headers):
     response = client.get("/me/reminders", headers=user_headers)
 
     assert response.status_code == 200
-    assert response.json() == {"enabled": True, "morning_time": "08:00", "evening_time": "21:00"}
+    assert response.json() == {
+        "enabled": True,
+        "daily_forecast": True,
+        "morning_time": "08:00",
+        "evening_time": "21:00",
+    }
 
 
 def test_change_times_and_turn_off(client: TestClient, user_headers):
     body = client.patch(
         "/me/reminders",
         headers=user_headers,
-        json={"morning_time": "07:30", "evening_time": "22:15:45", "enabled": False},
+        json={
+            "morning_time": "07:30",
+            "evening_time": "22:15:45",
+            "enabled": False,
+            "daily_forecast": False,
+        },
     ).json()
 
-    assert body == {"enabled": False, "morning_time": "07:30", "evening_time": "22:15"}
+    assert body == {
+        "enabled": False,
+        "daily_forecast": False,
+        "morning_time": "07:30",
+        "evening_time": "22:15",
+    }
     assert client.get("/me/reminders", headers=user_headers).json() == body
 
 
 def test_only_sent_fields_change(client: TestClient, user_headers):
     body = client.patch("/me/reminders", headers=user_headers, json={"evening_time": "20:00"})
-    assert body.json() == {"enabled": True, "morning_time": "08:00", "evening_time": "20:00"}
+    assert body.json() == {
+        "enabled": True,
+        "daily_forecast": True,
+        "morning_time": "08:00",
+        "evening_time": "20:00",
+    }
 
 
 @pytest.mark.parametrize(
@@ -39,6 +59,7 @@ def test_only_sent_fields_change(client: TestClient, user_headers):
         {"morning_time": "25:00"},
         {"morning_time": None},
         {"enabled": None},
+        {"daily_forecast": None},
         {"evening_time": "21:00+02:00"},  # time zone comes from the profile
         {"snooze": True},  # unknown field
     ],

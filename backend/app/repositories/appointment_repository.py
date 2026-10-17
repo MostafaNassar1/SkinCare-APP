@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy import delete, or_, select
 from sqlalchemy.orm import Session, selectinload
 
-from app.models import Appointment
+from app.models import Appointment, User
 
 
 def create(
@@ -72,5 +72,46 @@ def delete_for_user(db: Session, user_id: int, appointment_id: int) -> None:
     db.execute(
         delete(Appointment).where(
             Appointment.id == appointment_id, Appointment.user_id == user_id
+        )
+    )
+
+
+def list_scheduled_between(
+    db: Session, start: datetime, end: datetime
+) -> list[tuple[Appointment, User]]:
+    """Scheduled appointments of active users after `start` and before `end`, with the place and
+    the user (for the time zone): the ones the scheduler may remind about. One starting exactly
+    at `start` is already too late for a reminder."""
+    return list(
+        db.execute(
+            select(Appointment, User)
+            .join(User, User.id == Appointment.user_id)
+            .where(
+                Appointment.status == "scheduled",
+                Appointment.requested_datetime > start,
+                Appointment.requested_datetime < end,
+                User.is_active,
+            )
+            .options(selectinload(Appointment.clinic))
+            .order_by(Appointment.requested_datetime)
+        )
+    )
+
+
+def list_between_for_user(
+    db: Session, user_id: int, start: datetime, end: datetime
+) -> list[Appointment]:
+    """All the user's appointments in [start, end), whatever their status, in time order (the
+    calendar shows cancelled ones crossed out)."""
+    return list(
+        db.scalars(
+            select(Appointment)
+            .where(
+                Appointment.user_id == user_id,
+                Appointment.requested_datetime >= start,
+                Appointment.requested_datetime < end,
+            )
+            .options(selectinload(Appointment.clinic))
+            .order_by(Appointment.requested_datetime, Appointment.id)
         )
     )

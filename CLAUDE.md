@@ -118,7 +118,9 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   constraints their full convention name with `op.f(...)`). `0003` = email_tokens.attempts +
   non-unique token_hash. `0004` = user_profiles.skin_notes. `0005` = routine_steps.days_of_week +
   user_profiles reminder settings. `0006` = clinics.category. `0007` = appointments status
-  "scheduled" (default) + doctor_name. Dev DB is at `0007` with the 1,332 imported places.
+  "scheduled" (default) + doctor_name. `0008` = notifications title + dedupe_key. `0009` = weather tips skin_type + priority,
+  conditions windy/polluted, 12 new tips (18 total), user_profiles.daily_forecast_enabled. Dev DB
+  is at `0009` with the 1,332 imported places.
 - Run: `cd backend; .venv\Scripts\activate; uvicorn app.main:app --reload` → http://127.0.0.1:8000/docs
 - Tests: `cd backend; .venv\Scripts\activate; pytest`. `tests/conftest.py` recreates
   `skincare_app_test` (name must end in `_test`) with `alembic upgrade head` each run, drops it at
@@ -190,8 +192,44 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   Step 11; needs the background scheduler, a richer `weather_skin_tips` (skin type, thresholds,
   priority, new conditions like windy/polluted: migration) and a user on/off setting.
   Step 7 already collects its inputs (location, skin quiz, FCM devices).
-- Open decisions: hosting, calendar type, Cloudinary upload flow, background scheduler
-  (required by the daily forecast); weather = Open-Meteo.
+- **Scheduler & push (decided 2026-10-17, Step 11):** APScheduler inside the backend for now; the
+  "run what is due" logic is written once so an external free trigger (GitHub Actions / cron-job.org
+  calling a protected endpoint) can be added if the host sleeps. Push = `PUSH_BACKEND=console`
+  (printed in the log + saved in the inbox) until Phase 4, when the Firebase project is created with
+  the Flutter app. Every automatic notification has a `dedupe_key` (unique per user) so nothing is
+  ever sent twice; pushes are sent only after the commit (`notification_service.notify` →
+  commit → `push_all`).
+- **Scheduler (Step 11 Part 2):** `app/core/scheduler.py` (started in `create_app`'s lifespan when
+  `SCHEDULER_ENABLED`, off in tests) runs every 5 min `scheduler_service.run_due(db, now)` (routine
+  reminders at each user's local times listing only steps not yet done, 60-min late window, keys
+  `routine-morning|evening:YYYY-MM-DD`; appointment reminders 24 h + 2 h before, type
+  `appointment_update`, key includes the time so a moved appointment is reminded again, skipped if
+  recorded after the reminder moment), daily 03:00 `maintenance_service.cleanup_unverified`, Sunday
+  04:00 `maintenance_service.refresh_places` (Asia/Beirut). Manual: `python -m
+  app.scripts.run_scheduler_once [--now ISO]`. External trigger: `POST /internal/scheduler/run`
+  with header `X-Scheduler-Key` = `SCHEDULER_SECRET` (404 otherwise, hidden from /docs).
+- **Daily skin forecast (Step 11 Part 3):** `scheduler_service.due_forecasts` at 11:00 user-local
+  (window to 13:00 so Open-Meteo failures are retried; key `forecast:YYYY-MM-DD`, type
+  `weather_alert`; only users with a location and `daily_forecast` on; one weather request per
+  place per run). `services/weather_service.py` (Open-Meteo forecast + air quality, User-Agent must
+  be `name/version` or Open-Meteo answers 503; air quality optional), `services/skin_forecast_service.py`
+  (thresholds: hot ≥ 30 °C max, cold ≤ 10 °C min, humid ≥ 70 %, dry ≤ 35 %, high UV ≥ 6 (rounded,
+  WHO), windy ≥ 30 km/h, polluted EAQI ≥ 60; tip = own skin type > concern of the latest scan >
+  priority; sunscreen line when UV ≥ 3). Endpoints: `GET /me/skin-forecast` (today's saved
+  forecast or null, `has_location`, Open-Meteo attribution), public cached `GET /weather-tips`,
+  `daily_forecast` in `GET/PATCH /me/reminders`. Tests never call Open-Meteo (autouse
+  `no_weather_api`). Open-Meteo free plan = non-commercial + attribution (limitation for the report).
+- **Calendar (Step 11 Part 4, decided 2026-10-17: in-app calendar + .ics export, no Google
+  Calendar API):** `GET /me/calendar?month=YYYY-MM` (default current month, user's time zone):
+  every day with `routine` = complete/partial/missed/today/planned/rest/null (past days from
+  `streak_service.day_statuses`, so it always agrees with the streak; future from the active
+  routine) + `events` = appointments (read from the tracker, never copied; all statuses) and
+  personal events (`calendar_events`, type "custom"). `POST /me/calendar/events`,
+  `PATCH/DELETE /me/calendar/events/{id}` (404 `calendar_event_not_found`, 422
+  `invalid_event_time` beyond 5 years). `GET /me/calendar.ics` (RFC 5545 by hand in
+  `services/ics_service.py`: CRLF, 75-byte folding, escaping, UTC times, stable UIDs; last 30 days +
+  next 365; appointments 1 h with a 2 h alarm, cancelled = STATUS:CANCELLED; `no-store`).
+- Open decisions: hosting, Cloudinary upload flow; weather = Open-Meteo.
 - The local DB password is the PostgreSQL default (same as the username): fine for local
   development only, **must be changed to a strong one before hosting**.
 
@@ -232,14 +270,13 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   `mostafa/feature/phase2-step9-routines`, 403 tests; PR #9 squash-merged, tag `phase2-step9`.
 - Phase 2 Step 10 (OSM import of Lebanon's clinics & pharmacies, map endpoints, appointment
   tracker; migrations 0006-0007): done 2026-10-15 on branch `mostafa/feature/phase2-step10-clinics`;
-  PR waiting for the user's "merge". Bug PR #10 (weekday-dependent Step 9 tests) merged; awarding
+  PR #11 squash-merged, tag `phase2-step10`. Bug PR #10 (weekday-dependent Step 9 tests) merged; awarding
   tests now run on all 7 weekdays.
-- **NEXT: Phase 2 Step 11**: notifications, calendar, daily skin forecast (11:00), sending routine
-  reminders / badge pushes / appointment reminders (day before + 2 h), background scheduler
-  (decision needed), weather tips table changes.
+- **NOW: Phase 2 Step 11** on branch `mostafa/feature/phase2-step11-notifications`: notifications, calendar, daily skin forecast (11:00), sending routine
+  reminders / badge pushes / appointment reminders (day before + 2 h), background scheduler,
+  weather tips table changes. Part 1 (inbox + push service, migration 0008), Part 2 (scheduler)
+  Part 3 (daily skin forecast, migration 0009) and Part 4 (calendar + .ics) done: step finished,
+  waiting for the PR / merge.
 - Proposed (not yet agreed): a Step 12 for admin APIs (rules, ingredients, tips, users, reports,
   audit logs), needed by the React admin in Phase 7.
   Tests (pytest) inside each step.
-- Not yet assigned to a step: a background scheduler for reminders/weather/achievements
-  (depends on hosting). It must also run `python -m app.scripts.cleanup_unverified` daily
-  (deletes email sign-ups still unverified after 24 h; `--dry-run`, `--hours N`).

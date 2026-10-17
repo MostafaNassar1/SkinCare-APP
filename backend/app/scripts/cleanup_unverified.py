@@ -5,28 +5,22 @@ r"""Delete email sign-ups that were never verified (e.g. made-up or mistyped add
     python -m app.scripts.cleanup_unverified              # deletes them
 
 Such accounts can never be used (nobody received their code), so after 24 hours they are only
-clutter. Later the background scheduler will run this every day.
+clutter. The background scheduler also runs this every night at 03:00.
 """
 
 import argparse
 import sys
-from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.orm import Session
 
 from app.db.session import SessionLocal
-from app.repositories import user_repository
+from app.services.maintenance_service import UNVERIFIED_MAX_AGE_HOURS, cleanup_unverified
 
-DEFAULT_MAX_AGE_HOURS = 24
+DEFAULT_MAX_AGE_HOURS = UNVERIFIED_MAX_AGE_HOURS
 
 
 def cleanup(db: Session, *, max_age_hours: int, dry_run: bool) -> int:
-    cutoff = datetime.now(UTC) - timedelta(hours=max_age_hours)
-    if dry_run:
-        return user_repository.count_never_verified(db, created_before=cutoff)
-    deleted = user_repository.delete_never_verified(db, created_before=cutoff)
-    db.commit()
-    return deleted
+    return cleanup_unverified(db, max_age_hours=max_age_hours, dry_run=dry_run)
 
 
 def main(argv: list[str] | None = None) -> int:

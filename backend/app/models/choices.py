@@ -32,4 +32,5 @@ DEVICE_PLATFORMS = ("android", "ios")
 
 EMAIL_TOKEN_PURPOSES = ("password_reset", "email_verification")
 REPORT_TYPES = ("user_activity", "scan_trends", "appointments", "achievement_engagement")
-WEATHER_CONDITIONS = ("hot", "cold", "humid", "dry", "high_uv")
+# windy and polluted added in migration 0009 (daily skin forecast)
+WEATHER_CONDITIONS = ("hot", "cold", "humid", "dry", "high_uv", "windy", "polluted")

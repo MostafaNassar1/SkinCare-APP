@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey, Index, String, Text, false
+from sqlalchemy import ForeignKey, Index, String, Text, UniqueConstraint, false
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, CreatedAt, IntPK, check_in
@@ -10,12 +10,17 @@ class Notification(Base):
     __table_args__ = (
         check_in("type", NOTIFICATION_TYPES),
         Index("idx_notifications_user_unread", "user_id", "is_read"),
+        # the same automatic notification (e.g. "forecast:2026-10-17") is never stored twice
+        UniqueConstraint("user_id", "dedupe_key"),
     )
 
     id: Mapped[IntPK]
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     type: Mapped[str] = mapped_column(String(30))
+    title: Mapped[str | None] = mapped_column(String(100))  # push title (migration 0008)
     message: Mapped[str] = mapped_column(Text)
+    # identifies an automatic notification, e.g. "appointment-2h:42"; NULL for one-off ones
+    dedupe_key: Mapped[str | None] = mapped_column(String(100))
     is_read: Mapped[bool] = mapped_column(server_default=false())
     sent_at: Mapped[CreatedAt]
 

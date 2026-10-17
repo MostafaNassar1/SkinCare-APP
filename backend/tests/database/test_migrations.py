@@ -10,14 +10,14 @@ from app.db.base import Base
 from app.db.session import engine
 from tests.conftest import alembic_config
 
-# expected counts from database/seed_v2.sql
+# expected counts from database/seed_v2.sql (+ the 12 forecast tips of migration 0009)
 SEED_COUNTS = {
     "skin_concerns": 6,
     "ingredients": 13,
     "ingredient_conflicts": 8,
     "concern_recommendation_mapping": 20,
     "achievements": 6,
-    "weather_skin_tips": 6,
+    "weather_skin_tips": 18,
 }
 
 

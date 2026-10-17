@@ -12,14 +12,9 @@ from datetime import date
 
 from sqlalchemy.orm import Session
 
-from app.models import Achievement, User
-from app.repositories import (
-    achievement_repository,
-    notification_repository,
-    routine_repository,
-    scan_repository,
-)
-from app.services import streak_service
+from app.models import Achievement, Notification, User
+from app.repositories import achievement_repository, routine_repository, scan_repository
+from app.services import notification_service, streak_service
 
 
 @dataclass(frozen=True)
@@ -59,21 +54,33 @@ def is_reached(achievement: Achievement, stats: Stats) -> bool:
     return value >= achievement.criteria_value
 
 
-def award_new(db: Session, user: User, today: date) -> list[Achievement]:
+@dataclass(frozen=True)
+class Awarded:
+    achievements: list[Achievement]  # for the app's celebration pop-up
+    notifications: list[Notification]  # to push after the commit
+
+
+def award_new(db: Session, user: User, today: date) -> Awarded:
     """Award every active badge whose goal is now reached, each with a notification.
 
-    Returns the badges earned just now (for the app's celebration pop-up). The caller commits.
+    The caller commits, then pushes `notifications` (notification_service.push_all).
     """
     stats = user_stats(db, user, today)
     already = achievement_repository.earned_dates(db, user.id)
-    new = []
+    achievements, notifications = [], []
     for achievement in achievement_repository.list_active(db):
         if achievement.id in already or not is_reached(achievement, stats):
             continue
         if achievement_repository.award(db, user_id=user.id, achievement_id=achievement.id):
-            message = f"🏆 You earned “{achievement.title}”! {achievement.description or ''}"
-            notification_repository.create(
-                db, user_id=user.id, type="achievement", message=message.strip()
+            message = f"You earned “{achievement.title}”! {achievement.description or ''}"
+            notification = notification_service.notify(
+                db,
+                user_id=user.id,
+                type="achievement",
+                message=message.strip(),
+                dedupe_key=f"achievement:{achievement.id}",
             )
-            new.append(achievement)
-    return new
+            achievements.append(achievement)
+            if notification is not None:
+                notifications.append(notification)
+    return Awarded(achievements=achievements, notifications=notifications)

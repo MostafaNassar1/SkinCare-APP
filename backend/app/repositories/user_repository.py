@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import delete, func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, contains_eager
 
 from app.models import User, UserProfile
 
@@ -82,3 +82,23 @@ def create_email_user(db: Session, *, full_name: str, email: str, password_hash:
     db.add(user)
     db.flush()  # sends the INSERTs now, so the id exists and unique violations surface here
     return user
+
+
+def list_forecast_candidates(db: Session) -> list[User]:
+    """Users who may get the daily skin forecast: active, verified, forecast on, and with a
+    location (no location = no local weather). Profiles loaded for the scheduler."""
+    return list(
+        db.scalars(
+            select(User)
+            .join(UserProfile, UserProfile.user_id == User.id)
+            .where(
+                User.is_active,
+                User.email_verified,
+                User.last_latitude.is_not(None),
+                User.last_longitude.is_not(None),
+                UserProfile.daily_forecast_enabled,
+            )
+            .options(contains_eager(User.profile))
+            .order_by(User.id)
+        )
+    )
