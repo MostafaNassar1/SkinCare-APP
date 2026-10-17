@@ -219,7 +219,17 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   forecast or null, `has_location`, Open-Meteo attribution), public cached `GET /weather-tips`,
   `daily_forecast` in `GET/PATCH /me/reminders`. Tests never call Open-Meteo (autouse
   `no_weather_api`). Open-Meteo free plan = non-commercial + attribution (limitation for the report).
-- Open decisions: hosting, calendar type, Cloudinary upload flow; weather = Open-Meteo.
+- **Calendar (Step 11 Part 4, decided 2026-10-17: in-app calendar + .ics export, no Google
+  Calendar API):** `GET /me/calendar?month=YYYY-MM` (default current month, user's time zone):
+  every day with `routine` = complete/partial/missed/today/planned/rest/null (past days from
+  `streak_service.day_statuses`, so it always agrees with the streak; future from the active
+  routine) + `events` = appointments (read from the tracker, never copied; all statuses) and
+  personal events (`calendar_events`, type "custom"). `POST /me/calendar/events`,
+  `PATCH/DELETE /me/calendar/events/{id}` (404 `calendar_event_not_found`, 422
+  `invalid_event_time` beyond 5 years). `GET /me/calendar.ics` (RFC 5545 by hand in
+  `services/ics_service.py`: CRLF, 75-byte folding, escaping, UTC times, stable UIDs; last 30 days +
+  next 365; appointments 1 h with a 2 h alarm, cancelled = STATUS:CANCELLED; `no-store`).
+- Open decisions: hosting, Cloudinary upload flow; weather = Open-Meteo.
 - The local DB password is the PostgreSQL default (same as the username): fine for local
   development only, **must be changed to a strong one before hosting**.
 
@@ -265,7 +275,8 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
 - **NOW: Phase 2 Step 11** on branch `mostafa/feature/phase2-step11-notifications`: notifications, calendar, daily skin forecast (11:00), sending routine
   reminders / badge pushes / appointment reminders (day before + 2 h), background scheduler,
   weather tips table changes. Part 1 (inbox + push service, migration 0008), Part 2 (scheduler)
-  and Part 3 (daily skin forecast, migration 0009) done; next Part 4 (calendar).
+  Part 3 (daily skin forecast, migration 0009) and Part 4 (calendar + .ics) done: step finished,
+  waiting for the PR / merge.
 - Proposed (not yet agreed): a Step 12 for admin APIs (rules, ingredients, tips, users, reports,
   audit logs), needed by the React admin in Phase 7.
   Tests (pytest) inside each step.

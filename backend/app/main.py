@@ -14,6 +14,7 @@ from app.routes import (
     admin_auth_routes,
     appointment_routes,
     auth_routes,
+    calendar_routes,
     device_routes,
     forecast_routes,
     health_routes,
@@ -73,6 +74,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(appointment_routes.router)
     app.include_router(notification_routes.router)
     app.include_router(forecast_routes.router)
+    app.include_router(calendar_routes.router)
     app.include_router(internal_routes.router)
     return app
 

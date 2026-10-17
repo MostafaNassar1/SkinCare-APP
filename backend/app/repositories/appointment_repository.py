@@ -96,3 +96,22 @@ def list_scheduled_between(
             .order_by(Appointment.requested_datetime)
         )
     )
+
+
+def list_between_for_user(
+    db: Session, user_id: int, start: datetime, end: datetime
+) -> list[Appointment]:
+    """All the user's appointments in [start, end), whatever their status, in time order (the
+    calendar shows cancelled ones crossed out)."""
+    return list(
+        db.scalars(
+            select(Appointment)
+            .where(
+                Appointment.user_id == user_id,
+                Appointment.requested_datetime >= start,
+                Appointment.requested_datetime < end,
+            )
+            .options(selectinload(Appointment.clinic))
+            .order_by(Appointment.requested_datetime, Appointment.id)
+        )
+    )
