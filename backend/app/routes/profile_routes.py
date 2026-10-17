@@ -31,7 +31,8 @@ def get_reminders(user: CurrentUser, db: DB):
 
 @router.patch("/reminders", response_model=RemindersOut)
 def update_reminders(data: RemindersUpdate, user: CurrentUser, db: DB):
-    """Routine reminder settings: on/off and the morning/evening times (user's time zone)."""
+    """Notification settings: routine reminders on/off and their morning/evening times (user's
+    time zone), and the daily skin forecast on/off."""
     return profile_controller.update_reminders(db, user, data)
 
 

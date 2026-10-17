@@ -1,4 +1,5 @@
-"""What the background scheduler sends every few minutes: routine and appointment reminders.
+"""What the background scheduler sends every few minutes: routine and appointment reminders
+and the daily skin forecast.
 
 Written once and called from three places: the in-process scheduler (app/core/scheduler.py),
 the manual command (app/scripts/run_scheduler_once.py) and the protected endpoint
@@ -9,17 +10,28 @@ Running it twice, or from two places at once, never sends anything twice: every 
 dedupe key, and the database stores a key only once per user (notifications_user_id_dedupe_key_key).
 """
 
+import logging
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time, timedelta
 
 from sqlalchemy.orm import Session
 
 from app.models import Appointment, Notification, Routine, User
-from app.repositories import appointment_repository, routine_repository
-from app.services import notification_service
+from app.repositories import (
+    appointment_repository,
+    notification_repository,
+    routine_repository,
+    scan_repository,
+    user_repository,
+    weather_tip_repository,
+)
+from app.services import notification_service, skin_forecast_service, weather_service
 from app.services.local_time import user_zone
 from app.services.routine_reminder_service import build_reminder, clock
 from app.services.routine_service import scheduled_steps
+from app.services.weather_service import DailyWeather, WeatherUnavailable
+
+logger = logging.getLogger("app.scheduler")
 
 # A reminder is still sent if the server was down at the exact time and comes back within this
 # window (e.g. 21:00 reminder sent at 21:30); later than that it would be stale, so it is skipped.
@@ -29,21 +41,29 @@ REMINDER_LATE_WINDOW = timedelta(minutes=60)
 DAY_BEFORE = timedelta(hours=24)
 SHORTLY_BEFORE = timedelta(hours=2)
 
+# The daily skin forecast (decided 2026-10-12): 11:00 in the user's time zone. The longer window
+# lets later runs retry when Open-Meteo did not answer.
+FORECAST_TIME = time(11, 0)
+FORECAST_WINDOW = timedelta(hours=2)
+
 
 @dataclass(frozen=True)
 class RunSummary:
     routine_reminders: int
     appointment_reminders: int
+    forecasts: int
     pushes_sent: int
 
 
 # ---------- Routine reminders ----------
 
 
-def reminder_day(now: datetime, at: time, user: User) -> date | None:
-    """The user's local day whose reminder at `at` is due now, or None.
+def due_day(
+    now: datetime, at: time, user: User, window: timedelta = REMINDER_LATE_WINDOW
+) -> date | None:
+    """The user's local day whose notification at `at` is due now, or None.
 
-    Due = between the reminder time and the end of the late window. Yesterday is checked too, so
+    Due = between the time and the end of the window. Yesterday is checked too, so
     a 23:30 reminder can still go out at 00:10 (for yesterday's routine). Compared in UTC, so
     daylight-saving changes cannot confuse it.
     """
@@ -51,7 +71,7 @@ def reminder_day(now: datetime, at: time, user: User) -> date | None:
     today = now.astimezone(zone).date()
     for day in (today, today - timedelta(days=1)):
         start = datetime.combine(day, at, tzinfo=zone).astimezone(UTC)
-        if start <= now < start + REMINDER_LATE_WINDOW:
+        if start <= now < start + window:
             return day
     return None
 
@@ -65,7 +85,7 @@ def _routine_reminders_for(
         ("morning", profile.morning_reminder_time),
         ("evening", profile.evening_reminder_time),
     ):
-        day = reminder_day(now, at, user)
+        day = due_day(now, at, user)
         if day is None:
             continue
         done = routine_repository.logged_step_ids(db, user.id, day)
@@ -153,6 +173,46 @@ def due_appointment_reminders(db: Session, now: datetime) -> list[Notification]:
     return created
 
 
+# ---------- Daily skin forecast ----------
+
+
+def due_forecasts(db: Session, now: datetime) -> list[Notification]:
+    """Today's skin forecast for every user whose 11:00 has come. Places are rounded to about
+    1 km when saved, so neighbours share one weather request per run."""
+    weather_at: dict[tuple, DailyWeather | None] = {}
+    tips = None
+    created = []
+    for user in user_repository.list_forecast_candidates(db):
+        day = due_day(now, FORECAST_TIME, user, FORECAST_WINDOW)
+        key = f"forecast:{day.isoformat()}" if day else None
+        if key is None or notification_repository.get_by_dedupe_key(db, user.id, key):
+            continue  # not 11:00 yet, or already sent today: no weather request needed
+        place = (user.last_latitude, user.last_longitude)
+        if place not in weather_at:
+            try:
+                weather_at[place] = weather_service.fetch_today(*place)
+            except WeatherUnavailable as exc:
+                logger.warning("Weather unavailable, the forecast will be retried: %s", exc)
+                weather_at[place] = None  # do not ask again in this run
+        weather = weather_at[place]
+        if weather is None:
+            continue
+        if tips is None:
+            tips = weather_tip_repository.list_active(db)
+        message = skin_forecast_service.build_message(
+            weather,
+            tips,
+            user.profile.skin_type,
+            scan_repository.latest_concern_ids(db, user.id),
+        )
+        notification = notification_service.notify(
+            db, user_id=user.id, type="weather_alert", message=message, dedupe_key=key
+        )
+        if notification is not None:
+            created.append(notification)
+    return created
+
+
 # ---------- One run ----------
 
 
@@ -161,10 +221,12 @@ def run_due(db: Session, now: datetime | None = None) -> RunSummary:
     now = now or datetime.now(UTC)
     routine = due_routine_reminders(db, now)
     appointments = due_appointment_reminders(db, now)
+    forecasts = due_forecasts(db, now)
     db.commit()
-    pushed = notification_service.push_all(db, routine + appointments)
+    pushed = notification_service.push_all(db, routine + appointments + forecasts)
     return RunSummary(
         routine_reminders=len(routine),
         appointment_reminders=len(appointments),
+        forecasts=len(forecasts),
         pushes_sent=pushed,
     )

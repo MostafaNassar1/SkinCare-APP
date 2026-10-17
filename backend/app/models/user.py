@@ -85,6 +85,8 @@ class UserProfile(Base):
     routine_reminders_enabled: Mapped[bool] = mapped_column(server_default=true())
     morning_reminder_time: Mapped[time] = mapped_column(server_default=text("'08:00'"))
     evening_reminder_time: Mapped[time] = mapped_column(server_default=text("'21:00'"))
+    # the daily skin forecast push at 11:00 local time (migration 0009)
+    daily_forecast_enabled: Mapped[bool] = mapped_column(server_default=true())
     updated_at: Mapped[UpdatedAt]
 
     user: Mapped[User] = relationship(back_populates="profile")

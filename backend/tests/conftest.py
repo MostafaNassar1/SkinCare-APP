@@ -38,7 +38,7 @@ from app.core.security import create_access_token, hash_password  # noqa: E402
 from app.db.session import engine  # noqa: E402
 from app.main import app  # noqa: E402
 from app.models import User, UserProfile  # noqa: E402
-from app.services import email_service  # noqa: E402
+from app.services import email_service, weather_service  # noqa: E402
 from app.services.email_service import Email  # noqa: E402
 from tests.google_fake import CLIENT_ID as GOOGLE_CLIENT_ID  # noqa: E402
 from tests.google_fake import FakeGoogle  # noqa: E402
@@ -115,6 +115,17 @@ def outbox(monkeypatch) -> list[Email]:
     sent: list[Email] = []
     monkeypatch.setattr(email_service, "_deliver", sent.append)
     return sent
+
+
+@pytest.fixture(autouse=True)
+def no_weather_api(monkeypatch) -> None:
+    """Tests never call Open-Meteo: a test that needs weather replaces weather_service._get (or
+    fetch_today) itself; any other call fails loudly."""
+
+    def blocked(url, params):
+        raise AssertionError(f"a test tried to call the weather API: {url}")
+
+    monkeypatch.setattr(weather_service, "_get", blocked)
 
 
 @pytest.fixture

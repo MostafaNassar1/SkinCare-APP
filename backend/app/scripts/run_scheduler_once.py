@@ -1,4 +1,4 @@
-r"""Send the routine and appointment reminders that are due right now (one scheduler run).
+r"""Send the reminders and skin forecasts that are due right now (one scheduler run).
 
     cd backend; .venv\Scripts\activate
     python -m app.scripts.run_scheduler_once
@@ -32,7 +32,8 @@ def main(argv: list[str] | None = None) -> int:
         summary = scheduler_service.run_due(db, args.now)
     print(
         f"Sent {summary.routine_reminders} routine and {summary.appointment_reminders} "
-        f"appointment reminder(s), {summary.pushes_sent} push(es)."
+        f"appointment reminder(s), {summary.forecasts} skin forecast(s), "
+        f"{summary.pushes_sent} push(es)."
     )
     return 0
 

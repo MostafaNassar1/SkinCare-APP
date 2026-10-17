@@ -1,7 +1,8 @@
 """The background scheduler: APScheduler running inside the backend (decided 2026-10-17).
 
 Jobs:
-- every few minutes (SCHEDULER_INTERVAL_MINUTES): routine + appointment reminders that are due
+- every few minutes (SCHEDULER_INTERVAL_MINUTES): routine + appointment reminders and the
+  11:00 daily skin forecast, when due
 - every night at 03:00: delete email sign-ups never verified after 24 h
 - every Sunday at 04:00: refresh the clinics and pharmacies from OpenStreetMap
 
@@ -28,11 +29,12 @@ logger = logging.getLogger("app.scheduler")
 def send_due_reminders() -> None:
     with SessionLocal() as db:
         summary = scheduler_service.run_due(db)
-    if summary.routine_reminders or summary.appointment_reminders:
+    if summary.routine_reminders or summary.appointment_reminders or summary.forecasts:
         logger.info(
-            "Reminders sent: %d routine, %d appointment (%d pushes)",
+            "Sent: %d routine reminder(s), %d appointment reminder(s), %d forecast(s) (%d pushes)",
             summary.routine_reminders,
             summary.appointment_reminders,
+            summary.forecasts,
             summary.pushes_sent,
         )
 

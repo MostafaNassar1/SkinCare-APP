@@ -59,3 +59,11 @@ def get_for_user(db: Session, user_id: int, notification_id: int) -> Notificatio
             Notification.id == notification_id, Notification.user_id == user_id
         )
     )
+
+
+def get_by_dedupe_key(db: Session, user_id: int, dedupe_key: str) -> Notification | None:
+    return db.scalar(
+        select(Notification).where(
+            Notification.user_id == user_id, Notification.dedupe_key == dedupe_key
+        )
+    )

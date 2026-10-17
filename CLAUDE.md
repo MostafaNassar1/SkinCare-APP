@@ -118,8 +118,9 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   constraints their full convention name with `op.f(...)`). `0003` = email_tokens.attempts +
   non-unique token_hash. `0004` = user_profiles.skin_notes. `0005` = routine_steps.days_of_week +
   user_profiles reminder settings. `0006` = clinics.category. `0007` = appointments status
-  "scheduled" (default) + doctor_name. `0008` = notifications title + dedupe_key. Dev DB is at
-  `0008` with the 1,332 imported places.
+  "scheduled" (default) + doctor_name. `0008` = notifications title + dedupe_key. `0009` = weather tips skin_type + priority,
+  conditions windy/polluted, 12 new tips (18 total), user_profiles.daily_forecast_enabled. Dev DB
+  is at `0009` with the 1,332 imported places.
 - Run: `cd backend; .venv\Scripts\activate; uvicorn app.main:app --reload` → http://127.0.0.1:8000/docs
 - Tests: `cd backend; .venv\Scripts\activate; pytest`. `tests/conftest.py` recreates
   `skincare_app_test` (name must end in `_test`) with `alembic upgrade head` each run, drops it at
@@ -207,6 +208,17 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   04:00 `maintenance_service.refresh_places` (Asia/Beirut). Manual: `python -m
   app.scripts.run_scheduler_once [--now ISO]`. External trigger: `POST /internal/scheduler/run`
   with header `X-Scheduler-Key` = `SCHEDULER_SECRET` (404 otherwise, hidden from /docs).
+- **Daily skin forecast (Step 11 Part 3):** `scheduler_service.due_forecasts` at 11:00 user-local
+  (window to 13:00 so Open-Meteo failures are retried; key `forecast:YYYY-MM-DD`, type
+  `weather_alert`; only users with a location and `daily_forecast` on; one weather request per
+  place per run). `services/weather_service.py` (Open-Meteo forecast + air quality, User-Agent must
+  be `name/version` or Open-Meteo answers 503; air quality optional), `services/skin_forecast_service.py`
+  (thresholds: hot ≥ 30 °C max, cold ≤ 10 °C min, humid ≥ 70 %, dry ≤ 35 %, high UV ≥ 6 (rounded,
+  WHO), windy ≥ 30 km/h, polluted EAQI ≥ 60; tip = own skin type > concern of the latest scan >
+  priority; sunscreen line when UV ≥ 3). Endpoints: `GET /me/skin-forecast` (today's saved
+  forecast or null, `has_location`, Open-Meteo attribution), public cached `GET /weather-tips`,
+  `daily_forecast` in `GET/PATCH /me/reminders`. Tests never call Open-Meteo (autouse
+  `no_weather_api`). Open-Meteo free plan = non-commercial + attribution (limitation for the report).
 - Open decisions: hosting, calendar type, Cloudinary upload flow; weather = Open-Meteo.
 - The local DB password is the PostgreSQL default (same as the username): fine for local
   development only, **must be changed to a strong one before hosting**.
@@ -252,8 +264,8 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   tests now run on all 7 weekdays.
 - **NOW: Phase 2 Step 11** on branch `mostafa/feature/phase2-step11-notifications`: notifications, calendar, daily skin forecast (11:00), sending routine
   reminders / badge pushes / appointment reminders (day before + 2 h), background scheduler,
-  weather tips table changes. Part 1 (inbox + push service, migration 0008) and Part 2 (scheduler)
-  done; next Part 3 (daily skin forecast), Part 4 (calendar).
+  weather tips table changes. Part 1 (inbox + push service, migration 0008), Part 2 (scheduler)
+  and Part 3 (daily skin forecast, migration 0009) done; next Part 4 (calendar).
 - Proposed (not yet agreed): a Step 12 for admin APIs (rules, ingredients, tips, users, reports,
   audit logs), needed by the React admin in Phase 7.
   Tests (pytest) inside each step.

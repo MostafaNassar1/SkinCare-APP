@@ -65,7 +65,12 @@ def test_endpoint_needs_the_right_key(client: TestClient, monkeypatch):
     assert run(client, "wrong").status_code == 404
     response = run(client, "k" * 40)
     assert response.status_code == 200
-    assert response.json() == {"routine_reminders": 0, "appointment_reminders": 0, "pushes_sent": 0}
+    assert response.json() == {
+        "routine_reminders": 0,
+        "appointment_reminders": 0,
+        "forecasts": 0,
+        "pushes_sent": 0,
+    }
 
 
 def test_endpoint_is_hidden_from_the_docs(client: TestClient):
@@ -80,7 +85,9 @@ def test_manual_command(db: Session, app_user, routine, monkeypatch, capsys):
 
     assert script.main(["--now", beirut(19, 21, 0).isoformat()]) == 0
 
-    assert "Sent 1 routine and 0 appointment reminder(s), 0 push(es)." in capsys.readouterr().out
+    assert "Sent 1 routine and 0 appointment reminder(s), 0 skin forecast(s), 0 push(es)." in (
+        capsys.readouterr().out
+    )
     assert len(saved(db, app_user)) == 1
 
 
