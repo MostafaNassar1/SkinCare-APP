@@ -26,3 +26,11 @@ def test_crop_box_stays_inside_the_photo():
     face = Face(x=5, y=10, width=200, height=300, score=0.9)
 
     assert crop_box(face, width=210, height=320) == (0, 0, 210, 320)
+
+
+def test_face_converts_back_to_the_yunet_layout():
+    face = Face(1, 2, 3, 4, 0.9, landmarks=((5, 6), (7, 8), (9, 10), (11, 12), (13, 14)))
+
+    assert face.as_yunet_row().tolist() == pytest.approx(
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 0.9]
+    )

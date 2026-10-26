@@ -101,7 +101,9 @@ def inspect_acne04(raw: Path, sources: Path) -> dict:
             "entries": len(v2),
             "missing_photos": sorted(i.file_name for i in v2 if i.file_name not in on_disk),
             "valid_circles": sum(len(i.lesions) for i in v2),
-            "invalid_circles": {i.file_name: len(i.invalid_lesions) for i in v2 if i.invalid_lesions},
+            "invalid_circles": {
+                i.file_name: len(i.invalid_lesions) for i in v2 if i.invalid_lesions
+            },
             "exact_duplicates": duplicate_groups([p for p in v2_photos if p.exists()]),
             "grade_vs_v2_circle_count": agreement(
                 [(i.grade, hayashi_grade(len(i.lesions))) for i in v2]

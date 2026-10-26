@@ -57,6 +57,47 @@ class AcneImage:
     invalid_lesions: list[Lesion] = field(default_factory=list)
 
 
+def load_split_file_grades(folder: Path) -> dict[str, tuple[str, int]]:
+    """Expert grade + original lesion count per photo, from the authors' split files.
+
+    The grade in these files is the real one: it matches the Hayashi grade of the lesion count on
+    every photo, while 42 file names carry another grade (see DATASETS.md). Fold 0 (trainval + test)
+    lists every photo exactly once: "file grade count".
+    """
+    grades = {}
+    for name in ("NNEW_trainval_0.txt", "NNEW_test_0.txt"):
+        for line in (Path(folder) / name).read_text().splitlines():
+            if line.strip():
+                file_name, grade, count = line.split()
+                grades[file_name] = (GRADES[int(grade)], int(count))
+    return grades
+
+
+def circle_to_box(lesion: Lesion, width: int, height: int) -> tuple[float, float, float, float]:
+    """(left, top, right, bottom) of the square around a lesion circle, kept inside the photo."""
+    return (
+        max(0.0, lesion.x - lesion.radius),
+        max(0.0, lesion.y - lesion.radius),
+        min(float(width), lesion.x + lesion.radius),
+        min(float(height), lesion.y + lesion.radius),
+    )
+
+
+def pick_unique(images: list["AcneImage"], digests: dict[str, str]) -> list["AcneImage"]:
+    """One photo per group of byte-identical files: the one with the most circles, then by name.
+
+    Duplicates would otherwise land in training and test at the same time.
+    """
+    best = {}
+    for image in images:
+        key = digests[image.file_name]
+        current = best.get(key)
+        rank = (-len(image.lesions), image.file_name)
+        if current is None or rank < (-len(current.lesions), current.file_name):
+            best[key] = image
+    return sorted(best.values(), key=lambda image: image.file_name)
+
+
 def load_v2_annotations(path: Path) -> list[AcneImage]:
     """Reads Acne04-v2_annotations.json (COCO-like: images + one annotation per lesion)."""
     data = json.loads(Path(path).read_text(encoding="utf-8"))

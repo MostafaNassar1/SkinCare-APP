@@ -13,6 +13,7 @@ non-commercial; the trained models inherit these restrictions (see "Consequences
 | **FFHQ-Wrinkle** + FFHQ originals | Wrinkle masks → U-Net | 1,000 manual masks (1024×1024, 8-bit grayscale) + 50,000 weak masks | CC BY-NC-SA 4.0 ([labhai/ffhq-wrinkle-dataset](https://github.com/labhai/ffhq-wrinkle-dataset)); each FFHQ photo CC BY 2.0 / BY-NC 2.0 / public domain (author per image in the metadata) |
 | **MEMI-DS** public release | Dark spot (melasma) masks → U-Net | 131 photo / mask pairs in two folders, *Flaky* and *Punctate* (melasma patterns) | CC BY 4.0 ([figshare 10.6084/m9.figshare.29209229.v1](https://doi.org/10.6084/m9.figshare.29209229.v1)) |
 | **YuNet** (OpenCV Zoo) | Face detection, used as it is | — | MIT |
+| **SFace** (OpenCV Zoo, `face_recognition_sface_2021dec.onnx`) | Face fingerprints, only to keep photos of the same person in one split (never in the app) | — | Apache 2.0 |
 
 ## Facts checked for the design
 
@@ -118,3 +119,55 @@ best face is used when a training photo has several).
 | Redness / oily-dry photo sets | Redness, oiliness and dryness come from the skin quiz (no reliable licensed photo data) |
 | Unique Data / TrainingDataPro selfies | CC BY-NC-ND (no derivatives): at most local testing, never training or publishing |
 | Unverified Kaggle re-uploads | Unknown origin and quality (duplicates, rotations, processed images) |
+
+## Manifests and splits (Part 1.4, 2026-10-26)
+
+`ml/scripts/build_manifests.py` writes one manifest per model to `C:\SkinCareData\prepared\manifests\`
+(every photo, its labels, its group and its split; training formats are produced in Steps 3-4).
+Splits: **70% train / 15% validation / 15% test by group**, so photos of one person are never on both
+sides (otherwise the test would measure memory instead of skill); fixed seed 2026 (reproducible).
+
+**`pimples.json` (YOLO): 1,167 photos, 31,676 boxes** (circle → surrounding square). 1,204 v2 entries
+− 36 byte-identical duplicates (the copy with most circles kept) − `levle2_130.jpg` (invalid
+circles, until relabelled). Grade = split-file expert grade; every box has type "lesion" until the
+whitehead / pustule / other labelling of Step 3. Stratified by grade:
+
+| Expert grade | train | val | test |
+|---|---|---|---|
+| mild | 334 | 67 | 75 |
+| moderate | 387 | 90 | 79 |
+| severe | 85 | 15 | 16 |
+| very severe | 12 | 3 | 4 |
+
+Only 19 very-severe photos remain in v2: results for that grade will be uncertain (limitation).
+
+**Grouping ACNE04 by person** (it has no person ids):
+- A perceptual hash (dHash) was tried first and **rejected for identity**: same-person photos
+  differed by 36-42 / 256 bits, different people in the same clinic setup by 43+, so one threshold
+  cannot separate them; at 64 bits, chains merged 136 different people into one group. The hash is
+  kept only for near-identical copies (≤ 20 / 256 bits).
+- Same person = **SFace fingerprints** (YuNet face found on 1,017 of 1,167 photos), cosine ≥ **0.65**.
+  OpenCV's default 0.363 is meant for frontal faces: on these angled clinical photos 7% of all pairs
+  passed it and chaining merged 1,008 photos into one group. At 0.65 the largest group (15) is one
+  patient photographed at several visits with grades 0, 1 and 2 (proof that grouping was needed);
+  borderline pairs (0.65-0.68) were checked by eye: almost all the same person.
+- Result: 615 groups (394 single photos, 221 people with 2-15 photos). Limitations: photos without a
+  detected face (150) can only be linked as copies; the threshold was calibrated by eye.
+
+**`segmentation.json` (U-Net): 1,131 photos.** FFHQ-Wrinkle 1,000 (known channel: wrinkles; no person
+ids, each photo its own group) → 700 / 150 / 150. MEMI-DS 131 (known channel: dark spots, only the
+regions of its view; grouped by person) → 91 / 21 / 19. Every MEMI region colour appears only in its
+expected view (0 exceptions on 131 masks), which confirms the region mapping.
+
+## Rules for manual corrections (agreed 2026-10-26)
+
+1. **Add only clear misses** (a visible pimple without a circle, an obvious missing wrinkle line);
+   never delete or move expert labels unless obviously wrong (e.g. on the background), and say why.
+2. **Never change expert grades**: they are the reference our model is evaluated against.
+3. **Every change is logged** (photo, what, why, who, date) in `C:\SkinCareData\prepared\corrections\`,
+   apart from the original files, which stay untouched.
+4. **Test-set labels are frozen before training** and never edited after seeing model results.
+5. Labels follow written definitions (American Academy of Dermatology); the report states that
+   corrections and lesion types were labelled by non-experts.
+6. Wrinkle masks: check a sample (~50) first; fix only if systematic gaps are found (brush tool, e.g.
+   Label Studio, decided in Step 4). MEMI front-view cheeks may optionally be annotated the same way.
