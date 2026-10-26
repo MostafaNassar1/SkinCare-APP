@@ -89,11 +89,8 @@ def pimples_manifest(sources: Path) -> dict:
                 "v2_circle_grade": hayashi_grade(len(image.lesions)),
                 # lesion type: "lesion" until labelled whitehead / pustule / other (Step 3)
                 "boxes": [
-                    {
-                        "type": "lesion",
-                        "box": [round(v, 1) for v in circle_to_box(lesion, image.width, image.height)],
-                    }
-                    for lesion in image.lesions
+                    {"type": "lesion", "box": [round(v, 1) for v in box]}
+                    for box in (circle_to_box(c, image.width, image.height) for c in image.lesions)
                 ],
                 "group": groups[image.file_name],
                 "split": splits[image.file_name],
@@ -175,7 +172,8 @@ def main() -> int:
     pimples = pimples_manifest(sources)
     (output / "pimples.json").write_text(json.dumps(pimples, indent=1), encoding="utf-8")
     summary("pimples (YOLO)", pimples, "expert_grade")
-    print(f"  removed duplicates {pimples['removed_duplicates']}, excluded {len(pimples['excluded'])}")
+    print(f"  removed duplicates {pimples['removed_duplicates']}")
+    print(f"  excluded {len(pimples['excluded'])}")
     print(f"  face fingerprints {pimples['photos_with_face_fingerprint']}")
     print(f"  group sizes {pimples['group_sizes']}")
     print(f"  boxes {sum(len(e['boxes']) for e in pimples['images'])}")
