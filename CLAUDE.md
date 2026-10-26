@@ -145,10 +145,12 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   - 2 models, not a whole-face classifier and not one YOLO for everything: each model matches the
     form of the existing expert labels (circles per pimple / pixel masks); one detector for all
     classes would need every class boxed by hand on every photo. YuNet (MIT) crops the face.
-  - Datasets: ACNE04 + ACNE04-v2 (1,168 unique photos, 31,694 valid expert circles, all labelled
-    "acne": types whitehead/pustule/other labelled by us on ~200 photos; licences TO VERIFY),
+  - Datasets (licences verified 2026-10-25, details + inspection results in `ml/DATASETS.md`):
+    ACNE04 ("free for academic usage") + ACNE04-v2 (no licence stated: academic use, cited, not
+    redistributed, permission email suggested to the user; fallback = original ACNE04 boxes; all
+    circles labelled "acne": types whitehead/pustule/other labelled by us on ~200 photos),
     FFHQ-Wrinkle (1,000 manual masks, CC BY-NC-SA 4.0), MEMI-DS (131 melasma photos + masks,
-    CC BY 4.0). Excluded: DermNet (forbids AI training), ISIC, Fitzpatrick17k/SD-198/SCIN (disease),
+    CC BY 4.0), YuNet (MIT), SFace (Apache 2.0, only to group ACNE04 photos by person). Excluded: DermNet (forbids AI training), ISIC, Fitzpatrick17k/SD-198/SCIN (disease),
     Nexdata (paid), Kaggle re-uploads. Reuses the user's own research kit
     (`Final Year Project\Skincare_Starter_Kit_Final`: sources, checksums, audits, labelling app).
   - Data lives in `C:\SkinCareData` (outside OneDrive), never committed. Code in `ml/` (own venv,
@@ -174,8 +176,8 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   The sun question (6 options) gives the Fitzpatrick type 1-6. Answers stored with a version.
   Pregnancy "prefer not to say" leaves the flag unchanged (the user's decision, 2026-10-13;
   Claude had suggested treating it as "yes" for ingredient safety).
-- Recommendations = **product types + ingredient + concentration** from the rules engine. No brand
-  tables, no LLM.
+- Recommendations = rules engine, no LLM. Phase 2 stored **product types + ingredient +
+  concentration**; Phase 3 Step 2 adds REAL products from a curated catalogue (see "Phase 3 design").
 - **Map of clinics & pharmacies (decided 2026-10-14, Step 10):** REAL OpenStreetMap data only,
   IMPORTED (not live Overpass: the public server answered 504 busy repeatedly) from Geofabrik's free
   daily Lebanon extract into `clinics` with a `category` (clinic/doctor/hospital/pharmacy; migration
@@ -306,5 +308,17 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   admin (rules, ingredients + conflicts, weather tips, badges, users, audit logs); scan reports need
   Phase 3 data. Only admin login/refresh/logout/me exist so far.
 - **Phase 3 planned 2026-10-18 → 2026-10-24** (see "Phase 3 design" above).
-- **NOW: Phase 3 Step 1** (datasets, licences & setup) on branch
-  `mostafa/spike/phase3-step1-datasets`, started 2026-10-25.
+- Phase 3 Step 1 (datasets, licences & setup): done 2026-10-26 on branch
+  `mostafa/spike/phase3-step1-datasets`, 44 ml tests + 673 backend tests. `ml/` package
+  (`config`, `acne04`, `faces`, `memi`, `splits`), scripts `inspect_datasets.py` and
+  `build_manifests.py` (run from `ml/` with `$env:PYTHONPATH = "."`). Data in `C:\SkinCareData`:
+  `starter_kit/` (copy of the kit + downloads), `sources/` (ACNE04 extracted, ACNE04-v2 from GitHub),
+  `models/` (SFace), `prepared/` (reports, manifests `pimples.json` + `segmentation.json`).
+  Key findings: ACNE04 real grades are in the split files (42 file names wrong); counting all v2
+  circles over-grades (31% agreement with experts → Step 3 counts inflamed lesions or calibrates);
+  MEMI colours = face regions, cheeks only in side views (region-wise masked loss); YuNet needs a
+  ~640 px copy and OpenCV 4 (pinned); ACNE04 grouped by person with SFace ≥ 0.65 (615 groups,
+  largest = one patient, 15 visits); YOLO trains on whole ACNE04 photos (13% have no detectable face).
+  Rules for manual corrections in DATASETS.md (log every change, never edit expert grades or
+  frozen test labels).
+- **NEXT: Phase 3 Step 2** (rules engine + real product catalogue + skin quiz v2).
