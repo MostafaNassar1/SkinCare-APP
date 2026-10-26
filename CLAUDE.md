@@ -147,7 +147,7 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
     classes would need every class boxed by hand on every photo. YuNet (MIT) crops the face.
   - Datasets (licences verified 2026-10-25, details + inspection results in `ml/DATASETS.md`):
     ACNE04 ("free for academic usage") + ACNE04-v2 (no licence stated: academic use, cited, not
-    redistributed, permission email suggested to the user; fallback = original ACNE04 boxes; all
+    redistributed; the user chose not to email the authors; fallback = original ACNE04 boxes; all
     circles labelled "acne": types whitehead/pustule/other labelled by us on ~200 photos),
     FFHQ-Wrinkle (1,000 manual masks, CC BY-NC-SA 4.0), MEMI-DS (131 melasma photos + masks,
     CC BY 4.0), YuNet (MIT), SFace (Apache 2.0, only to group ACNE04 photos by person). Excluded: DermNet (forbids AI training), ISIC, Fitzpatrick17k/SD-198/SCIN (disease),

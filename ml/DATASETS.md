@@ -9,7 +9,7 @@ non-commercial; the trained models inherit these restrictions (see "Consequences
 | Dataset | Used for | Size | Licence (official source) |
 |---|---|---|---|
 | **ACNE04** | Expert severity grades (`levle0-3` in the filename) to evaluate our lesion counts; its own lesion boxes are the fallback for ACNE04-v2 | 1,457 photos, 18,983 lesion boxes | "This work is free for academic usage"; other uses: contact the author ([xpwu95/LDL](https://github.com/xpwu95/LDL)) |
-| **ACNE04-v2** | Lesion circles → YOLO training (types whitehead / pustule / other labelled by us) | 1,204 entries = 1,168 unique photos (36 exact duplicates), 32,443 circles (49 invalid on `levle2_130.jpg`) | **No licence stated** ([AIpourlapeau/acne04v2](https://github.com/AIpourlapeau/acne04v2)): asks to cite AcneAI; permission requested from the authors (see below) |
+| **ACNE04-v2** | Lesion circles → YOLO training (types whitehead / pustule / other labelled by us) | 1,204 entries = 1,168 unique photos (36 exact duplicates), 32,443 circles (49 invalid on `levle2_130.jpg`) | **No licence stated** ([AIpourlapeau/acne04v2](https://github.com/AIpourlapeau/acne04v2)): asks to cite AcneAI; academic use only (see below) |
 | **FFHQ-Wrinkle** + FFHQ originals | Wrinkle masks → U-Net | 1,000 manual masks (1024×1024, 8-bit grayscale) + 50,000 weak masks | CC BY-NC-SA 4.0 ([labhai/ffhq-wrinkle-dataset](https://github.com/labhai/ffhq-wrinkle-dataset)); each FFHQ photo CC BY 2.0 / BY-NC 2.0 / public domain (author per image in the metadata) |
 | **MEMI-DS** public release | Dark spot (melasma) masks → U-Net | 131 photo / mask pairs in two folders, *Flaky* and *Punctate* (melasma patterns) | CC BY 4.0 ([figshare 10.6084/m9.figshare.29209229.v1](https://doi.org/10.6084/m9.figshare.29209229.v1)) |
 | **YuNet** (OpenCV Zoo) | Face detection, used as it is | — | MIT |
@@ -86,9 +86,10 @@ best face is used when a training photo has several).
 - **ShareAlike (FFHQ-Wrinkle):** if we publish the U-Net weights, they must carry CC BY-NC-SA 4.0.
   Whether model files go into the public repository is decided in Step 5.
 - **ACNE04-v2 has no licence:** strictly, no permission is granted beyond the public release and the
-  citation request. We use it for academic research only, never redistribute it, cite it, and ask the
-  authors for written permission. If refused, we switch to the original ACNE04 boxes (clearly licensed
-  for academic use; 18,983 boxes instead of 32,443).
+  citation request. We use it for academic research only, never redistribute it and cite it. Asking
+  the authors for written permission was suggested; the student decided not to (2026-10-26: local,
+  academic use only, nothing published online). If the use is ever questioned, the original ACNE04
+  boxes (clearly licensed for academic use; 18,983 instead of 32,443) are the fallback.
 - Attribution in the report and the app's "About" page: ACNE04, ACNE04-v2 (AcneAI), FFHQ-Wrinkle,
   FFHQ (NVIDIA), MEMI-DS, YuNet.
 
