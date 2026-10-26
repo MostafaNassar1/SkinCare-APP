@@ -27,7 +27,56 @@ non-commercial; the trained models inherit these restrictions (see "Consequences
   the photo-capture design (frontal and/or side views) is decided in Step 5.
 - **YuNet** found the face in samples of all three sources (including MEMI's hidden eyes and a side
   view) on a ~640 px copy; on the full-size photos it found none (see README.md).
-- **MEMI-DS mask colours are not documented** by the source: inspected in Part 1.3 before use.
+- **MEMI-DS mask colours are not documented** by the source: inspected in Part 1.3 (below).
+
+## Inspection results (Part 1.3, 2026-10-26)
+
+Downloaded with the kit's script (every file size + checksum verified, 0 failures); ACNE04-v2 also
+downloaded from its official repository (commit `5930801`): identical SHA-256 to the kit's copy.
+Full report: `C:\SkinCareData\prepared\reports\inspection.json`, produced by
+`ml/scripts/inspect_datasets.py`.
+
+**ACNE04 (1,457 photos, 18,983 original lesions)**
+- The real grade is the one in the **split files** (`NNEW_*.txt`: file, grade, lesion count), not the
+  file name: they agree with the Hayashi grade of the original count on **100%** of photos. **42**
+  file names carry a different grade (17 "moderate" → mild, 14 "severe" → moderate, 8 "very severe" →
+  severe, 2 moderate → severe, 1 mild → moderate). The 5 folds give the same grades.
+- **38 groups of byte-identical photos** (36 inside the v2 subset): removed before splitting, so the
+  same photo can never be in training and test.
+- The archive has no lesion boxes (only photos + split files); the original 18,983 boxes would be a
+  separate download (only needed if ACNE04-v2 cannot be used).
+
+**ACNE04-v2 (1,204 entries)**
+- All photos present; 32,394 valid circles; 49 invalid on `levle2_130.jpg`.
+- v2 marks **more lesions than the original count on 90%** of photos (1,084; equal 19; fewer 101), so
+  the Hayashi grade of *all* v2 circles agrees with the expert grade on only **31%** of photos (it
+  over-grades). Likely reason: Hayashi counts inflammatory lesions only. → In Step 3, severity uses
+  only inflamed lesions (our type labels) or count thresholds calibrated on the expert grades.
+
+**FFHQ-Wrinkle (1,000)**: every mask paired, binary (0 / 255), none empty; wrinkles cover only
+**0.67%** of the pixels on average (thin lines → a loss suited to rare pixels, e.g. Dice, in Step 4).
+Every photo has wrinkles: wrinkle-free regions inside the photos are the negatives.
+
+**MEMI-DS (131 pairs, 63 people; 62 front, 37 left, 32 right views)**: mask colours are **face regions**,
+every coloured pixel is melasma: red = forehead, green = nose, purple = chin / jaw (front views),
+yellow = left cheek (left views), cyan = right cheek (right views). **Cheeks are only annotated in
+the side views**, so unmarked cheeks in front views are *unknown*, not "no dark spot": the U-Net loss
+must ignore them (region-wise masking, Step 4). Annotations are coarse patches (limitation). Splits by
+person (the number before `_`).
+
+**YuNet (exactly one face?)**
+| Source | 1 face | 0 faces | 2-3 faces |
+|---|---|---|---|
+| ACNE04 (1,457) | 1,156 | 295 | 6 |
+| ↳ inside v2 (1,204) | 1,038 | 160 (13%) | 6 |
+| ↳ removed by v2 (253) | 118 | 135 (53%) | 0 |
+| FFHQ (1,000) | 979 | 0 | 21 (people in the background) |
+| MEMI-DS (131) | 126 | 5 | 0 |
+
+Photos without a detected face are extreme side profiles, close-ups of a cheek, or watermarked web
+images. → The YOLO detector trains on the **whole ACNE04 photos** (already skin close-ups), not on
+YuNet crops; YuNet stays in the app to check that a user photo shows exactly one face (the largest /
+best face is used when a training photo has several).
 
 ## Consequences for the project
 
