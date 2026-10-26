@@ -32,7 +32,8 @@ dermatologists through the clinic locator, with a visible disclaimer.
 Flutter (mobile, Phase 4-6) · React admin (Phase 7) · FastAPI on Python 3.12 · PostgreSQL 16
 (port 5433, database `skincare_app`, user `postgres`) · SQLAlchemy 2 + Alembic · Cloudinary ·
 JWT access + refresh tokens · Google Sign-In + email/password (bcrypt) · FCM (push only) ·
-OpenStreetMap/Overpass (clinics + pharmacies) · pretrained CNN fine-tuned on public datasets.
+OpenStreetMap/Overpass (clinics + pharmacies) · AI (Phase 3): YOLO pimple detector + U-Net
+segmentation trained locally on public datasets, YuNet face detector, ONNX on the server.
 
 ## Backend architecture (agreed)
 `Middleware → routes/ (endpoints only, no logic) → controllers/ (logic per endpoint) →
@@ -132,10 +133,36 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   uses the same settings as `SessionLocal` (`expire_on_commit=False`, `autoflush=False`).
 
 ## Key decisions (with reasons, for the report)
-- Datasets: ACNE04 (acne + severity), FFHQ-Wrinkle, Roboflow CC-BY redness and pigmentation sets,
-  Kaggle oily/dry set. Fitzpatrick17k/SD-198 dropped (disease datasets). Model: shared backbone,
-  one sigmoid head per concern, masked loss. Licenses still to verify in Phase 3.
-- Oiliness/dryness = **hybrid (Option A)**: the skin quiz is primary, the photo is a supporting signal.
+- **Phase 3 design (decided 2026-10-18 → 2026-10-24; full plan with reasons in
+  `Final Year Project\Documentation\Phase 3 Plan (AI Model and Scans).md`):**
+  - 8 concerns. From the PHOTO: acne, whiteheads, pustules (YOLO pimple detector → circles; acne
+    severity = lesion count → Hayashi grade, checked against ACNE04 expert grades), wrinkles and
+    dark spots (U-Net segmentation, 2 channels, masked loss → lines / patches; severity = % of the
+    face). From the SKIN QUIZ: oiliness + dryness (skin type, already built) and redness (new
+    question, quiz v2) — no reliable licensed photo data for them (replaces the earlier
+    "oiliness/dryness hybrid" idea). Out of scope: blackheads, pores, dark circles (possible extra
+    later), cysts/nodules (only as severe acne → clinic), diseases.
+  - 2 models, not a whole-face classifier and not one YOLO for everything: each model matches the
+    form of the existing expert labels (circles per pimple / pixel masks); one detector for all
+    classes would need every class boxed by hand on every photo. YuNet (MIT) crops the face.
+  - Datasets (licences verified 2026-10-25, details + inspection results in `ml/DATASETS.md`):
+    ACNE04 ("free for academic usage") + ACNE04-v2 (no licence stated: academic use, cited, not
+    redistributed; the user chose not to email the authors; fallback = original ACNE04 boxes; all
+    circles labelled "acne": types whitehead/pustule/other labelled by us on ~200 photos),
+    FFHQ-Wrinkle (1,000 manual masks, CC BY-NC-SA 4.0), MEMI-DS (131 melasma photos + masks,
+    CC BY 4.0), YuNet (MIT), SFace (Apache 2.0, only to group ACNE04 photos by person). Excluded: DermNet (forbids AI training), ISIC, Fitzpatrick17k/SD-198/SCIN (disease),
+    Nexdata (paid), Kaggle re-uploads. Reuses the user's own research kit
+    (`Final Year Project\Skincare_Starter_Kit_Final`: sources, checksums, audits, labelling app).
+  - Data lives in `C:\SkinCareData` (outside OneDrive), never committed. Code in `ml/` (own venv,
+    Python 3.12). Training on another laptop with an NVIDIA GPU (dev laptop: i5-8365U, Intel UHD
+    620, no CUDA); no Kaggle/Colab (user's decision). Models exported to ONNX, run on the server.
+  - AI detects, rules advise; no LLM. Routine steps show 2-3 REAL over-the-counter products from a
+    hand-curated catalogue (user brings products sold in Lebanon, Claude checks official pages);
+    ingredients kept internally for pregnancy / allergy / conflict filtering with safe substitution;
+    severe → clinic + gentle basics only. Wording: "visible concern", never disease/diagnose/cure;
+    never "healthy skin". Photos private in Cloudinary.
+  - Steps: 1 datasets & licences (spike) · 2 rules engine + product catalogue + quiz v2 ·
+    3 YOLO detector · 4 U-Net · 5 scans in the backend · 6 integration.
 - **Routines & streaks (decided 2026-10-14):** a streak day = ALL steps scheduled for that day done
   (the user's rule); steps have scheduled weekdays so retinoids advised "2-3 nights a week" are
   never needed on rest days (Claude's safety fix, agreed). Only today can be ticked; past days are
@@ -149,8 +176,8 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   The sun question (6 options) gives the Fitzpatrick type 1-6. Answers stored with a version.
   Pregnancy "prefer not to say" leaves the flag unchanged (the user's decision, 2026-10-13;
   Claude had suggested treating it as "yes" for ingredient safety).
-- Recommendations = **product types + ingredient + concentration** from the rules engine. No brand
-  tables, no LLM.
+- Recommendations = rules engine, no LLM. Phase 2 stored **product types + ingredient +
+  concentration**; Phase 3 Step 2 adds REAL products from a curated catalogue (see "Phase 3 design").
 - **Map of clinics & pharmacies (decided 2026-10-14, Step 10):** REAL OpenStreetMap data only,
   IMPORTED (not live Overpass: the public server answered 504 busy repeatedly) from Geofabrik's free
   daily Lebanon extract into `clinics` with a `category` (clinic/doctor/hospital/pharmacy; migration
@@ -280,5 +307,18 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
 - **Admin APIs moved to Phase 7 (the user's decision, 2026-10-17):** built together with the React
   admin (rules, ingredients + conflicts, weather tips, badges, users, audit logs); scan reports need
   Phase 3 data. Only admin login/refresh/logout/me exist so far.
-- **NEXT: Phase 3** (AI model on the public datasets, scans + Cloudinary upload, rules engine that
-  generates routines; licences of the datasets to verify). Not started: plan it with the user first.
+- **Phase 3 planned 2026-10-18 → 2026-10-24** (see "Phase 3 design" above).
+- Phase 3 Step 1 (datasets, licences & setup): done 2026-10-26 on branch
+  `mostafa/spike/phase3-step1-datasets`, 44 ml tests + 673 backend tests. `ml/` package
+  (`config`, `acne04`, `faces`, `memi`, `splits`), scripts `inspect_datasets.py` and
+  `build_manifests.py` (run from `ml/` with `$env:PYTHONPATH = "."`). Data in `C:\SkinCareData`:
+  `starter_kit/` (copy of the kit + downloads), `sources/` (ACNE04 extracted, ACNE04-v2 from GitHub),
+  `models/` (SFace), `prepared/` (reports, manifests `pimples.json` + `segmentation.json`).
+  Key findings: ACNE04 real grades are in the split files (42 file names wrong); counting all v2
+  circles over-grades (31% agreement with experts → Step 3 counts inflamed lesions or calibrates);
+  MEMI colours = face regions, cheeks only in side views (region-wise masked loss); YuNet needs a
+  ~640 px copy and OpenCV 4 (pinned); ACNE04 grouped by person with SFace ≥ 0.65 (615 groups,
+  largest = one patient, 15 visits); YOLO trains on whole ACNE04 photos (13% have no detectable face).
+  Rules for manual corrections in DATASETS.md (log every change, never edit expert grades or
+  frozen test labels).
+- **NEXT: Phase 3 Step 2** (rules engine + real product catalogue + skin quiz v2).
