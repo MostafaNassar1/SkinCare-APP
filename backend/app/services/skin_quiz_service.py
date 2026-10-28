@@ -1,8 +1,9 @@
 """The onboarding skin quiz: its questions and how the answers become a skin type.
 
-The quiz is the PRIMARY signal for oiliness and dryness (hybrid decision); the photo model is a
-supporting signal. Questions are original (not copied from a copyrighted questionnaire) and are
-defined only here, so the app shows whatever this file contains.
+The quiz is the ONLY source of oiliness and dryness (and of redness from quiz v2): no reliable
+licensed photo data exists for them (Phase 3 decision, migration 0010). Questions are original
+(not copied from a copyrighted questionnaire) and are defined only here, so the app shows
+whatever this file contains.
 
 Scoring:
 - Each answer may add points to an oil score and/or a dry score, and may be a T-zone sign

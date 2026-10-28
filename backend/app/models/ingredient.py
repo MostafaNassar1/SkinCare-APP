@@ -1,16 +1,20 @@
 from sqlalchemy import CheckConstraint, ForeignKey, Index, String, Text, UniqueConstraint, false
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.db.base import Base, CreatedAt, IntPK
+from app.db.base import Base, CreatedAt, IntPK, check_in
+from app.models.choices import INGREDIENT_KINDS
 
 
 class Ingredient(Base):
     __tablename__ = "ingredients"
+    __table_args__ = (check_in("kind", INGREDIENT_KINDS),)
 
     id: Mapped[IntPK]
     name: Mapped[str] = mapped_column(String(100), unique=True)  # e.g. "Salicylic Acid"
     description: Mapped[str | None] = mapped_column(Text)
     avoid_during_pregnancy: Mapped[bool] = mapped_column(server_default=false())
+    # active (recommended by the rules) or allergen (only filters products), migration 0010
+    kind: Mapped[str] = mapped_column(String(10), server_default="active")
     created_at: Mapped[CreatedAt]
 
 

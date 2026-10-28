@@ -18,7 +18,7 @@ class SkinConcernOut(BaseModel):
     name: str  # stable code used by the API, e.g. "dark_spots"
     display_name: str  # shown in the app, e.g. "Dark spots"
     description: str | None
-    # photo = the AI model alone; hybrid = skin quiz (primary) + photo (oiliness, dryness)
+    # photo = the AI models; questionnaire = the skin quiz alone (oiliness, dryness, redness)
     detection_method: Literal[DETECTION_METHODS]
 
 
