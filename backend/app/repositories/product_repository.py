@@ -88,3 +88,25 @@ def add_suggestion(db: Session, *, user_id: int, name: str, step_category: str) 
     )
     if already is None:
         db.add(ProductSuggestion(user_id=user_id, name=name, step_category=step_category))
+
+
+def get_by_ids(db: Session, product_ids: Iterable[int]) -> dict[int, Product]:
+    return {
+        product.id: product
+        for product in db.scalars(select(Product).where(Product.id.in_(list(product_ids))))
+    }
+
+
+def key_ingredients(db: Session, product_ids: Iterable[int]) -> dict[int, list[str]]:
+    """product id -> its ACTIVE ingredients by name, with the concentration the brand states
+    ("Niacinamide 15%"); allergens are only used by the filters."""
+    by_product: dict[int, list[str]] = {}
+    for product_id, name, concentration in db.execute(
+        select(ProductIngredient.product_id, Ingredient.name, ProductIngredient.concentration)
+        .join(Ingredient, Ingredient.id == ProductIngredient.ingredient_id)
+        .where(ProductIngredient.product_id.in_(list(product_ids)), Ingredient.kind == "active")
+        .order_by(Ingredient.name)
+    ):
+        label = f"{name} {concentration}" if concentration else name
+        by_product.setdefault(product_id, []).append(label)
+    return by_product

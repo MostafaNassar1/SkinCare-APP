@@ -4,6 +4,7 @@ from typing import Literal
 from pydantic import BaseModel
 
 from app.models.choices import STEP_CATEGORIES, STEP_TIMES_OF_DAY
+from app.schemas.recommendation import OwnProductWarningOut, ProductCardOut
 from app.schemas.reference import AchievementOut
 
 
@@ -24,6 +25,8 @@ class RoutineStepOut(BaseModel):
     recommended_concentration: str | None  # e.g. "0.5-2%"
     days: list[str]  # scheduled weekdays, e.g. ["mon", "wed", "fri"]
     scheduled: bool  # part of THIS day (e.g. retinol only on its nights; not while waiting)
+    product: ProductCardOut | None  # the catalogue product the user chose for this step
+    own_product_name: str | None  # or the user's own product
     needs_product: bool  # the user does not have the product yet: not counted until they do
     done: bool
 
@@ -64,3 +67,10 @@ class StepLogOut(BaseModel):
 
     day: RoutineDayOut  # the updated day, ready for the screen
     new_achievements: list[AchievementOut]  # badges earned by this tick: show a celebration
+
+
+class RoutineSavedOut(BaseModel):
+    """The answer to saving / editing the routine."""
+
+    day: RoutineDayOut  # today's routine, ready for the screen
+    warnings: list[OwnProductWarningOut]  # about the user's own products (they decide)

@@ -15,9 +15,6 @@ from app.models import (
     RoutineLog,
     RoutineStepIngredient,
     RoutineStepProduct,
-    ScanResult,
-    ScanResultConcern,
-    SkinConcern,
     UserAllergy,
 )
 from app.services import concern_service, recommendation_service, routine_builder_service
@@ -25,21 +22,9 @@ from app.services.local_time import user_today
 from app.services.routine_builder_service import StepChoice
 from app.services.routine_service import scheduled_steps, step_counts_on
 from app.services.weekdays import EVERY_DAY, to_mask
+from tests.recommendations.conftest import add_scan as scan
 
 MON_WED_FRI = to_mask(["mon", "wed", "fri"])
-
-
-def scan(db: Session, user, **concerns: str) -> ScanResult:
-    result = ScanResult(user_id=user.id, image_url="https://example.com/x.jpg",
-                        image_public_id="x", model_version="test")  # fmt: skip
-    db.add(result)
-    db.flush()
-    for name, severity in concerns.items():
-        concern_id = db.scalar(select(SkinConcern.id).where(SkinConcern.name == name))
-        db.add(ScanResultConcern(scan_result_id=result.id, skin_concern_id=concern_id,
-                                 severity=severity, confidence_score=0.9))  # fmt: skip
-    db.flush()
-    return result
 
 
 def ingredient_id(db: Session, name: str) -> int:
