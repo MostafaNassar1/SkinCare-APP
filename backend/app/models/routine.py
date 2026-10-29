@@ -8,6 +8,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    false,
     text,
     true,
 )
@@ -35,6 +36,7 @@ class ConcernRecommendationMapping(Base):
         check_in("time_of_day", RULE_TIMES_OF_DAY),
         check_in("min_severity", SEVERITIES),
         check_in("skin_type", SKIN_TYPES),
+        CheckConstraint("days_of_week BETWEEN 1 AND 127", name="days_of_week_check"),
         Index("idx_mapping_concern", "skin_concern_id"),
     )
 
@@ -55,6 +57,9 @@ class ConcernRecommendationMapping(Base):
     skin_type: Mapped[str | None] = mapped_column(String(20))  # NULL = any skin type
     # higher wins when two rules fill the same slot
     priority: Mapped[int] = mapped_column(SmallInteger, server_default=text("0"))
+    # weekdays the step is done, copied to routine_steps (migration 0010): retinoids start
+    # "2-3 nights a week" = Mon, Wed, Fri = 21; 127 = every day (see services/weekdays.py)
+    days_of_week: Mapped[int] = mapped_column(SmallInteger, server_default=text("127"))
     notes: Mapped[str | None] = mapped_column(Text)
     is_active: Mapped[bool] = mapped_column(server_default=true())
     updated_at: Mapped[UpdatedAt]
@@ -97,6 +102,14 @@ class RoutineStep(Base):
         check_in("time_of_day", STEP_TIMES_OF_DAY),
         check_in("step_category", STEP_CATEGORIES),
         CheckConstraint("days_of_week BETWEEN 1 AND 127", name="days_of_week_check"),
+        # a step waiting for its product has no "ready" date yet
+        CheckConstraint(
+            "NOT (needs_product AND product_ready_on IS NOT NULL)", name="product_ready_check"
+        ),
+        # a catalogue product or the user's own product, never both
+        CheckConstraint(
+            "product_id IS NULL OR custom_product_name IS NULL", name="one_product_check"
+        ),
         UniqueConstraint("routine_id", "time_of_day", "step_order"),
     )
 
@@ -120,6 +133,18 @@ class RoutineStep(Base):
     # Wednesday = 4 ... Sunday = 64; 127 = every day. E.g. retinol "2-3 nights a week" = Mon, Wed,
     # Fri = 21. A streak day needs every step scheduled for that day. See services/weekdays.py.
     days_of_week: Mapped[int] = mapped_column(SmallInteger, server_default=text("127"))
+    # real products (migration 0010): the product the user uses for this step (NULL = their own
+    # or none chosen). needs_product = the user does not have it yet: the step is left out of
+    # reminders and streaks until they tap "I have it now", which sets product_ready_on to
+    # their local date (days before it are not counted either). NULL = counted from the start.
+    product_id: Mapped[int | None] = mapped_column(
+        ForeignKey("products.id", ondelete="RESTRICT")
+    )
+    # the user's own product, not in the catalogue ("I'll use my own product", migration 0011);
+    # the ingredients they tick are in routine_step_ingredients
+    custom_product_name: Mapped[str | None] = mapped_column(String(200))
+    needs_product: Mapped[bool] = mapped_column(server_default=false())
+    product_ready_on: Mapped[date | None]
 
     routine: Mapped[Routine] = relationship(back_populates="steps")
 

@@ -1,0 +1,940 @@
+{
+  "about": "Hand-curated catalogue of real over-the-counter products (Phase 3 Step 2). Each product was checked on its brand's official page on checked_on; ingredients are our active and allergen ingredients found in its INCI list. rules = the products of each recommendation rule, best first. See 'Phase 3 Product Recommendation Matrix.pdf' in the FYP documentation.",
+  "products": [
+    {
+      "key": "cerave_sa_cleanser",
+      "brand": "CeraVe",
+      "name": "SA Smoothing Cleanser",
+      "step_category": "cleanse",
+      "directions": "Wet the face, massage gently for 30-60 seconds, rinse with lukewarm water, pat dry.",
+      "inci_list": "Aqua/Water/Eau, Cocamidopropyl Hydroxysultaine, Glycerin, Sodium Lauroyl Sarcosinate, Niacinamide, Gluconolactone, Peg-150 Pentaerythrityl Tetrastearate, Sodium Methyl Cocoyl Taurate, Zea Mays Oil/Corn Oil, Ceramide NP, Ceramide AP, Ceramide EOP, Carbomer, Calcium Gluconate, Sodium Chloride, Salicylic Acid, Sodium Benzoate, Sodium Lauroyl Lactylate, Cholecalciferol, Cholesterol, Phenoxyethanol, Disodium Edta, Tetrasodium Edta, Hydrolyzed Hyaluronic Acid, Phytosphingosine, Xanthan Gum, Ethylhexylglycerin",
+      "source_url": "https://www.cerave.co.uk/skincare/cleansers/sa-smoothing-cleanser",
+      "checked_on": "2026-10-28",
+      "suitable_for_sensitive": true,
+      "ingredients": [
+        {
+          "name": "Ceramides",
+          "concentration": null
+        },
+        {
+          "name": "Hyaluronic Acid",
+          "concentration": null
+        },
+        {
+          "name": "Niacinamide",
+          "concentration": null
+        },
+        {
+          "name": "Salicylic Acid",
+          "concentration": null
+        }
+      ]
+    },
+    {
+      "key": "lrp_effaclar_gel",
+      "brand": "La Roche-Posay",
+      "name": "Effaclar Purifying Foaming Gel",
+      "step_category": "cleanse",
+      "directions": "Wet the face, massage gently for 30-60 seconds, rinse with lukewarm water, pat dry.",
+      "inci_list": "AQUA / WATER, SODIUM LAURETH SULFATE, PEG-8, COCO-BETAINE, HEXYLENE GLYCOL, SODIUM CHLORIDE, PEG-120 METHYL GLUCOSE DIOLEATE, ZINC PCA, SODIUM HYDROXIDE, CAPRYLYL GLYCOL, CITRIC ACID, SODIUM BENZOATE, PHENOXYETHANOL, PARFUM / FRAGRANCE",
+      "source_url": "https://www.laroche-posay-me.com/en/effaclar/effaclar-purifying-foaming-gel",
+      "checked_on": "2026-10-28",
+      "suitable_for_sensitive": false,
+      "ingredients": [
+        {
+          "name": "Fragrance (Parfum)",
+          "concentration": null
+        }
+      ]
+    },
+    {
+      "key": "bioderma_sebium_actif",
+      "brand": "Bioderma",
+      "name": "Sébium Gel Moussant Actif",
+      "step_category": "cleanse",
+      "directions": "Wet the face, massage gently for 30-60 seconds, rinse with lukewarm water, pat dry.",
+      "inci_list": "AQUA/WATER/EAU, CAPRYLYL/CAPRYL GLUCOSIDE, PROPANEDIOL, GLYCERIN, ZINC GLUCONATE, SALICYLIC ACID, GLYCOLIC ACID, COCO-GLUCOSIDE, GLYCERYL OLEATE, SODIUM HYDROXIDE, CELLULOSE GUM, XANTHAN GUM, CITRIC ACID, FRAGRANCE (PARFUM), MANNITOL, SODIUM CITRATE, XYLITOL, INULIN, SODIUM METABISULFITE, RHAMNOSE, CELLULOSE, FRUCTOSE, GLUCOSE, FRUCTOOLIGOSACCHARIDES, TOCOPHEROL, HYDROGENATED PALM GLYCERIDES CITRATE",
+      "source_url": "https://www.bioderma.fr/p/sebium-gel-moussant-actif",
+      "checked_on": "2026-10-28",
+      "suitable_for_sensitive": false,
+      "ingredients": [
+        {
+          "name": "Glycolic Acid",
+          "concentration": null
+        },
+        {
+          "name": "Salicylic Acid",
+          "concentration": null
+        },
+        {
+          "name": "Fragrance (Parfum)",
+          "concentration": null
+        }
+      ]
+    },
+    {
+      "key": "cerave_foaming",
+      "brand": "CeraVe",
+      "name": "Foaming Cleanser",
+      "step_category": "cleanse",
+      "directions": "Wet the face, massage gently for 30-60 seconds, rinse with lukewarm water, pat dry.",
+      "inci_list": "Aqua / Water / Eau, Cocamidopropyl Hydroxysultaine, Glycerin, Sodium Lauroyl Sarcosinate, Peg-150 Pentaerythrityl Tetrastearate, Niacinamide, Peg-6 Caprylic/Capric Glycerides, Sodium Methyl Cocoyl Taurate, Propylene Glycol, Ceramide NP, Ceramide AP, Ceramide EOP, Carbomer, Methylparaben, Sodium Chloride, Sodium Lauroyl Lactylate, Cholesterol, Disodium EDTA, Propylparaben, Citric Acid, Tetrasodium EDTA, Hydrolyzed Hyaluronic Acid, Phytosphingosine, Xanthan Gum",
+      "source_url": "https://www.cerave.co.uk/skincare/cleansers/foaming-cleanser",
+      "checked_on": "2026-10-28",
+      "suitable_for_sensitive": true,
+      "ingredients": [
+        {
+          "name": "Ceramides",
+          "concentration": null
+        },
+        {
+          "name": "Hyaluronic Acid",
+          "concentration": null
+        },
+        {
+          "name": "Niacinamide",
+          "concentration": null
+        },
+        {
+          "name": "Parabens",
+          "concentration": null
+        },
+        {
+          "name": "Propylene Glycol",
+          "concentration": null
+        }
+      ]
+    },
+    {
+      "key": "cetaphil_gentle",
+      "brand": "Cetaphil",
+      "name": "Gentle Skin Cleanser",
+      "step_category": "cleanse",
+      "directions": "Wet the face, massage gently for 30-60 seconds, rinse with lukewarm water, pat dry.",
+      "inci_list": "AQUA, GLYCERIN, CETEARYL ALCOHOL, PANTHENOL, NIACINAMIDE, PANTOLACTONE, XANTHAN GUM, SODIUM COCOYL ISETHIONATE, SODIUM BENZOATE, CITRIC ACID",
+      "source_url": "https://www.cetaphil.co.uk/cleansers/gentle-skin-cleanser/5020465202554.html",
+      "checked_on": "2026-10-28",
+      "suitable_for_sensitive": true,
+      "ingredients": [
+        {
+          "name": "Niacinamide",
+          "concentration": null
+        }
+      ]
+    },
+    {
+      "key": "cerave_hydrating_cleanser",
+      "brand": "CeraVe",
+      "name": "Hydrating Cleanser",
+      "step_category": "cleanse",
+      "directions": "Wet the face, massage gently for 30-60 seconds, rinse with lukewarm water, pat dry.",
+      "inci_list": "Aqua / Water / Eau, Glycerin, Cetearyl Alcohol, Peg-40 Stearate, Stearyl Alcohol, Potassium Phosphate, Ceramide NP, Ceramide AP, Ceramide EOP, Carbomer, Glyceryl Stearate, Behentrimonium Methosulfate, Sodium Lauroyl Lactylate, Sodium Hyaluronate, Cholesterol, Phenoxyethanol, Disodium EDTA, Dipotassium Phosphate, Tocopherol, Phytosphingosine, Xanthan Gum, Cetyl Alcohol, Polysorbate 20, Ethylhexylglycerin",
+      "source_url": "https://www.cerave.co.uk/skincare/cleansers/hydrating-cleanser",
+      "checked_on": "2026-10-28",
+      "suitable_for_sensitive": true,
+      "ingredients": [
+        {
+          "name": "Ceramides",
+          "concentration": null
+        },
+        {
+          "name": "Hyaluronic Acid",
+          "concentration": null
+        }
+      ]
+    },
+    {
+      "key": "bioderma_sensibio_gel",
+      "brand": "Bioderma",
+      "name": "Sensibio Gel Moussant",
+      "step_category": "cleanse",
+      "directions": "Wet the face, massage gently for 30-60 seconds, rinse with lukewarm water, pat dry.",
+      "inci_list": "AQUA/WATER/EAU, SODIUM COCOAMPHOACETATE, PROPANEDIOL, SODIUM LAUROYL SARCOSINATE, CITRIC ACID, COCO-GLUCOSIDE, GLYCERYL OLEATE, SODIUM CITRATE, PEG-90 GLYCERYL ISOSTEARATE, MANNITOL, XYLITOL, LAURETH-2, RHAMNOSE, FRUCTOOLIGOSACCHARIDES, TOCOPHEROL, HYDROGENATED PALM GLYCERIDES CITRATE",
+      "source_url": "https://www.bioderma.fr/p/crealine-gel-moussant",
+      "checked_on": "2026-10-28",
+      "suitable_for_sensitive": true,
+      "ingredients": []
+    },
+    {
+      "key": "lrp_effaclar_duo_m",
+      "brand": "La Roche-Posay",
+      "name": "Effaclar Duo+M",
+      "step_category": "treat",
+      "directions": "Thin layer on the whole face after cleansing, avoiding the eye area.",
+      "inci_list": "AQUA / WATER / EAU, GLYCERIN, DIMETHICONE, ISOCETYL STEARATE, NIACINAMIDE, ISOPROPYL LAUROYL SARCOSINATE, SILICA, AMMONIUM POLYACRYLOYLDIMETHYL TAURATE, ORYZA SATIVA STARCH / RICE STARCH, PUNICA GRANATUM PERICARP EXTRACT, POTASSIUM CETYL PHOSPHATE, SORBITAN OLEATE, ZINC PCA, GLYCERYL STEARATE SE, ISOHEXADECANE, SODIUM HYDROXIDE, MYRISTYL MYRISTATE, 2-OLEAMIDO-1,3-OCTADECANEDIOL, MANNOSE, POLOXAMER 338, PROPANEDIOL, HYDROXYETHOXYPHENYL BUTANONE, CAPRYLOYL SALICYLIC ACID, CAPRYLYL GLYCOL, VITREOSCILLA FERMENT, CITRIC ACID, TRISODIUM ETHYLENEDIAMINE DISUCCINATE, MALTODEXTRIN, XANTHAN GUM, PENTYLENE GLYCOL, POLYSORBATE 80, ACRYLAMIDE / SODIUM ACRYLOYLDIMETHYLTAURATE COPOLYMER, SALICYLIC ACID, PIROCTONE OLAMINE, PARFUM / FRAGRANCE",
+      "source_url": "https://www.laroche-posay-me.com/en/effaclar/effaclar-duo-plus-m-anti-imperfections-triple-corrective-care",
+      "checked_on": "2026-10-28",
+      "suitable_for_sensitive": false,
+      "ingredients": [
+        {
+          "name": "LHA (Capryloyl Salicylic Acid)",
+          "concentration": null
+        },
+        {
+          "name": "Niacinamide",
+          "concentration": null
+        },
+        {
+          "name": "Salicylic Acid",
+          "concentration": null
+        },
+        {
+          "name": "Fragrance (Parfum)",
+          "concentration": null
+        }
+      ]
+    },
+    {
+      "key": "cerave_blemish_gel",
+      "brand": "CeraVe",
+      "name": "Blemish Control Gel",
+      "step_category": "treat",
+      "directions": "Thin layer on blemish-prone areas; start every other evening for the first 2 weeks. Never on the same evening as retinol.",
+      "inci_list": "AQUA/WATER, GLYCERIN, SODIUM HYDROXIDE, GLYCOLIC ACID, LACTIC ACID, SALICYLIC ACID, NIACINAMIDE, CERAMIDE NP, CERAMIDE AP, CERAMIDE EOP, CARBOMER, CETEARYL ALCOHOL, BEHENTRIMONIUM METHOSULFATE, TRIETHYL CITRATE, SODIUM HYALURONATE, SODIUM LAUROYL LACTYLATE, CHOLESTEROL, CHLORPHENESIN, DISODIUM EDTA, HYDROXYPROPYL GUAR, CAPRYLYL GLYCOL, XANTHAN GUM, PHYTOSPHINGOSINE, BENZOIC ACID",
+      "source_url": "https://www.cerave.co.uk/skincare/moisturisers/blemish-control-gel",
+      "checked_on": "2026-10-28",
+      "suitable_for_sensitive": false,
+      "ingredients": [
+        {
+          "name": "Ceramides",
+          "concentration": null
+        },
+        {
+          "name": "Glycolic Acid",
+          "concentration": null
+        },
+        {
+          "name": "Hyaluronic Acid",
+          "concentration": null
+        },
+        {
+          "name": "Lactic Acid",
+          "concentration": null
+        },
+        {
+          "name": "Niacinamide",
+          "concentration": null
+        },
+        {
+          "name": "Salicylic Acid",
+          "concentration": null
+        }
+      ]
+    },
+    {
+      "key": "cosrx_pimple_patch",
+      "brand": "COSRX",
+      "name": "Acne Pimple Master Patch",
+      "step_category": "treat",
+      "directions": "Only when there is an inflamed spot: stick a patch on the clean, dry spot and leave it overnight (or a few hours). One patch, one use. Do not squeeze.",
+      "inci_list": "Hydrocolloid dressing with no active ingredient (the brand publishes no ingredient list for it)",
+      "source_url": "https://www.cosrx.com/products/acne-pimple-master-patch",
+      "checked_on": "2026-10-28",
+      "suitable_for_sensitive": true,
+      "ingredients": []
+    },
+    {
+      "key": "cosrx_niacinamide_15",
+      "brand": "COSRX",
+      "name": "The Niacinamide 15 Serum",
+      "step_category": "treat",
+      "directions": "2-3 drops on the face after cleansing, before moisturizer.",
+      "inci_list": "Water, Pentylene Glycol, Niacinamide(15%), Butylene Glycol, Acetyl Glucosamine, 1,2-Hexanediol, Zinc PCA, Trehalose, Xanthan Gum, Pullulan, Allantoin, Ethylhexylglycerin, Sodium Phytate, Citric Acid, Tocopherol",
+      "source_url": "https://www.cosrx.com/products/the-niacinamide-15-serum-%EB%B2%88%EB%93%A4",
+      "checked_on": "2026-10-28",
+      "suitable_for_sensitive": true,
+      "ingredients": [
+        {
+          "name": "Niacinamide",
+          "concentration": "15%"
+        }
+      ]
+    },
+    {
+      "key": "cosrx_ha3",
+      "brand": "COSRX",
+      "name": "The Hyaluronic Acid 3 Serum",
+      "step_category": "treat",
+      "directions": "2-3 drops on slightly damp skin after cleansing, then moisturizer.",
+      "inci_list": "Water, Butylene Glycol, Propanediol, Glycerin, Sodium Hyaluronate(3%), Pentylene Glycol, 1,2-Hexanediol, Diethoxyethyl Succinate, Sodium Polyacryloyldimethyl Taurate, Betaine, Xanthan Gum, Dimethicone, Hydroxyethyl Acrylate/Sodium Acryloyldimethyl Taurate Copolymer, Sodium PCA, Sodium Lactate, PCA, Glyceryl Acrylate/Acrylic Acid Copolymer, Hydrogenated Lecithin, Ethylhexylglycerin, Serine, Alanine, Glycine, Sodium Phytate, Sorbitan Isostearate, PVM/MA Copolymer, Glutamic Acid, Citric Acid, Lysine HCl, Threonine, Arginine, Sodium Methyl Stearoyl Taurate, Proline, Ceramide NP, Cholesterol, Caprylic/Capric Triglyceride, Phytosphingosine, Stearic Acid, Oleic Acid, Alcohol, Tocopherol, Lactic Acid, Caprylyl Glycol, Caprylhydroxamic Acid",
+      "source_url": "https://www.cosrx.com/products/the-hyaluronic-acid-3-serum_new-bundle",
+      "checked_on": "2026-10-28",
+      "suitable_for_sensitive": true,
+      "ingredients": [
+        {
+          "name": "Ceramides",
+          "concentration": null
+        },
+        {
+          "name": "Hyaluronic Acid",
+          "concentration": "3%"
+        }
+      ]
+    },
+    {
+      "key": "anua_azelaic_10",
+      "brand": "Anua",
+      "name": "Azelaic Acid 10 Hyaluron Redness Soothing Serum",
+      "step_category": "treat",
+      "directions": "Thin layer after cleansing; start every other evening for the first 2 weeks (a light tingle is normal at first).",
+      "inci_list": "Water, Azelaic Acid, Propylene Glycol, Sodium Hydroxide, Dipropylene Glycol, 1,2-Hexanediol, Panthenol, Hydroxyethylcellulose, Betaine Salicylate, Glycerin, Biosaccharide Gum-1, Ethylhexylglycerin, Allantoin, Dipotassium Glycyrrhizate, Melia Azadirachta Leaf Extract, Camellia Sinensis Leaf Water, Sodium Hyaluronate, Melia Azadirachta Flower Extract, Niacinamide, Aloe Barbadensis Leaf Juice, Beta-Glucan, Centella Asiatica Extract, Centella Asiatica Leaf Extract, Centella Asiatica Root Extract, Madecassoside, Asiaticoside, Asiatic Acid, Madecassic Acid, Squalane, Zinc PCA, Butylene Glycol, Pentylene Glycol, Caprylyl/Capryl Glucoside, Hydrogenated Lecithin, Ceramide NP",
+      "source_url": "https://anua.us/products/azelaic-acid-10-hyaluron-redness-soothing-serum",
+      "checked_on": "2026-10-28",
+      "suitable_for_sensitive": true,
+      "ingredients": [
+        {
+          "name": "Azelaic Acid",
+          "concentration": "10%"
+        },
+        {
+          "name": "Centella Asiatica",
+          "concentration": null
+        },
+        {
+          "name": "Ceramides",
+          "concentration": null
+        },
+        {
+          "name": "Hyaluronic Acid",
+          "concentration": null
+        },
+        {
+          "name": "Niacinamide",
+          "concentration": null
+        },
+        {
+          "name": "Salicylic Acid",
+          "concentration": null
+        },
+        {
+          "name": "Propylene Glycol",
+          "concentration": null
+        }
+      ]
+    },
+    {
+      "key": "lrp_cicaplast_b5plus",
+      "brand": "La Roche-Posay",
+      "name": "Cicaplast Baume B5+",
+      "step_category": "treat",
+      "directions": "Thin layer on the red or irritated areas after cleansing.",
+      "inci_list": "AQUA, HYDROGENATED POLYISOBUTENE, DIMETHICONE, GLYCERIN, BUTYROSPERMUM PARKII BUTTER / SHEA BUTTER, PANTHENOL, PROPANEDIOL, BUTYLENE GLYCOL, ALUMINUM STARCH OCTENYLSUCCINATE, CETYL PEG/PPG-10/1 DIMETHICONE, TRIHYDROXYSTEARIN, ZINC GLUCONATE, MADECASSOSIDE, TRIBIOMA, MANGANESE GLUCONATE, SILICA, ALUMINUM HYDROXIDE, MAGNESIUM SULFATE, DISODIUM EDTA, COPPER GLUCONATE, CAPRYLOYL GLYCINE, CITRIC ACID, ACETYLATED GLYCOL STEARATE, POLYGLYCERYL-4 ISOSTEARATE, TOCOPHEROL, PENTAERYTHRITYL TETRA-DI-T-BUTYL HYDROXYHYDROCINNAMATE, CI 77891 / TITANIUM DIOXIDE",
+      "source_url": "https://www.laroche-posay-me.com/en/cicaplast/cicaplast-baume-b5-plus",
+      "checked_on": "2026-10-28",
+      "suitable_for_sensitive": true,
+      "ingredients": [
+        {
+          "name": "Centella Asiatica",
+          "concentration": null
+        }
+      ]
+    },
+    {
+      "key": "skin1004_centella_cream",
+      "brand": "SKIN1004",
+      "name": "Madagascar Centella Soothing Cream",
+      "step_category": "treat",
+      "directions": "Thin layer after cleansing (stop if it stings).",
+      "inci_list": "Water, Glycerin, Propanediol, Dipropylene Glycol, Cyclopentasiloxane, Centella Asiatica Extract, 1,2-Hexanediol, Cyclohexasiloxane, Trehalose, Caprylyl Methicone, C12-14 Pareth-12, Carbomer, Tromethamine, C30-45 Alkyl Cetearyl Dimethicone Crosspolymer, Ammonium Acryloyldimethyltaurate/VP Copolymer, Butylene Glycol, Xanthan Gum, Zingiber Officinale (Ginger) Root Extract, Mentha Piperita (Peppermint) Leaf Extract, Ethylhexylglycerin, Dipotassium Glycyrrhizate, Tranexamic Acid, Dextrin, Theobroma Cacao (Cocoa) Seed Extract, Leuconostoc/Radish Root Ferment Filtrate, Biosaccharide Gum-1, Disodium EDTA, Sodium Hyaluronate, Beta-Glucan, Hydrogenated Lecithin, Coptis Chinensis Root Extract, Cetearyl Alcohol, Stearic Acid, Ceramide NP, Ceramide NG, Cholesterol, Phytosphingosine, Ceramide AS, Ceramide AP, Ceramide EOP",
+      "source_url": "https://skin1004.com/products/skin1004-madagascar-centella-soothing-cream",
+      "checked_on": "2026-10-28",
+      "suitable_for_sensitive": false,
+      "ingredients": [
+        {
+          "name": "Centella Asiatica",
+          "concentration": null
+        },
+        {
+          "name": "Ceramides",
+          "concentration": null
+        },
+        {
+          "name": "Hyaluronic Acid",
+          "concentration": null
+        }
+      ]
+    },
+    {
+      "key": "cosrx_vitc23",
+      "brand": "COSRX",
+      "name": "Advanced The Vitamin C 23 Serum",
+      "step_category": "treat",
+      "directions": "A few drops after cleansing, then moisturizer and sunscreen. Start every other morning for the first 2 weeks.",
+      "inci_list": "Aqua/Water, Ascorbic Acid(23%), Butylene Glycol, Dimethicone, Panthenol, 3-O-Ethyl Ascorbic Acid, Squalane, Sodium Hydroxide, Caffeine, Sodium Hyaluronate, Sodium Metaphosphate, Adenosine, Acetyl Glucosamine, Gardenia Florida Fruit Extract, Allantoin, Dextrin, Tocotrienols, Tocopherol, Elaeis Guineensis (Palm) Oil, Arginine, Niacinamide, Pentylene Glycol, Glutathione, Helianthus Annuus (Sunflower) Seed Oil, Methyl Trimethicone, Carthamus Tinctorius (Safflower) Seed Oil, Camellia Japonica Seed Oil, Daucus Carota Sativa (Carrot) Root Extract, Glycyrrhiza Glabra (Licorice) Root Extract, Beta-Carotene",
+      "source_url": "https://www.cosrx.com/products/the-vitamin-c-23-serum",
+      "checked_on": "2026-10-28",
+      "suitable_for_sensitive": false,
+      "ingredients": [
+        {
+          "name": "Hyaluronic Acid",
+          "concentration": null
+        },
+        {
+          "name": "Niacinamide",
+          "concentration": null
+        },
+        {
+          "name": "Vitamin C",
+          "concentration": "23%"
+        }
+      ]
+    },
+    {
+      "key": "lrp_retinol_b3",
+      "brand": "La Roche-Posay",
+      "name": "Retinol B3 Serum",
+      "step_category": "treat",
+      "directions": "Pea-sized amount on clean, dry skin, avoiding eyes and lips; moisturizer after; sunscreen every morning. Go up to every night only if the skin stays comfortable.",
+      "inci_list": "AQUA / WATER, GLYCERIN, CYCLOHEXASILOXANE, ALCOHOL DENAT, PENTYLENE GLYCOL, NIACINAMIDE, DIMETHICONE, GLYCINE SOJA OIL / SOYBEAN OIL, PPG-6-DECYLTETRADECETH-30, SODIUM HYALURONATE, RETINOL, ADENOSINE, AMMONIUM POLYACRYLOYLDIMETHYL TAURATE, CAPRYLYL GLYCOL, CITRIC ACID, TRISODIUM ETHYLENEDIAMINE DISUCCINATE, XANTHAN GUM, POLYSILICONE-11, RETINYL PALMITATE, TOCOPHEROL, PHENOXYETHANOL, PARFUM / FRAGRANCE",
+      "source_url": "https://www.laroche-posay-me.com/en/retinol/retinol-b3-serum",
+      "checked_on": "2026-10-28",
+      "suitable_for_sensitive": false,
+      "ingredients": [
+        {
+          "name": "Hyaluronic Acid",
+          "concentration": null
+        },
+        {
+          "name": "Niacinamide",
+          "concentration": null
+        },
+        {
+          "name": "Retinol",
+          "concentration": null
+        },
+        {
+          "name": "Retinyl Palmitate",
+          "concentration": null
+        },
+        {
+          "name": "Denatured Alcohol",
+          "concentration": null
+        },
+        {
+          "name": "Fragrance (Parfum)",
+          "concentration": null
+        }
+      ]
+    },
+    {
+      "key": "cosrx_retinol_01",
+      "brand": "COSRX",
+      "name": "The Retinol 0.1 Cream",
+      "step_category": "treat",
+      "directions": "Pea-sized amount on clean, dry skin, avoiding eyes and lips; moisturizer after; sunscreen every morning. Go up to every night only if the skin stays comfortable.",
+      "inci_list": "Water, Caprylic/Capric Triglyceride, Propanediol, Glycerin, Tocopheryl Acetate, Cetearyl Alcohol, Trehalose, Panthenol, Butyrospermum Parkii (Shea) Butter, Glycine Soja (Soybean) Oil, Ammonium Acryloyldimethyltaurate/VP Copolymer, Dimethicone, Glyceryl Polymethacrylate, Helianthus Annuus (Sunflower) Seed Oil, Polyglyceryl-10 Stearate, Hydrogenated Lecithin, Hydroxyethyl Acrylate/Sodium Acryloyldimethyl Taurate Copolymer, Carbomer, Tromethamine, Glyceryl Stearate, Polysilicone-11, Sodium Sulfite, Tocopherol, Daucus Carota Sativa (Carrot) Root Extract, Retinol(0.1%), Allantoin, Glyceryl Caprylate, Oryza Sativa (Rice) Bran Wax, Tocotrienols, Stearic Acid, Polyglyceryl-3 Methylglucose Distearate, Palmitic Acid, Disodium EDTA, Ethylhexylglycerin, Adenosine, Sorbitan Isostearate, Elaeis Guineensis (Palm) Oil, BHT, Beta-Carotene, Myristic Acid, Lauric Acid, Ascorbic Acid, Limnanthes Alba (Meadowfoam) Seed Oil, 3-O-Ethyl Ascorbic Acid, Glutathione, Sodium Hyaluronate, 1,2-Hexanediol, Hydrolyzed Hyaluronic Acid, Sodium Hyaluronate Crosspolymer, Hyaluronic Acid, Sodium Acetylated Hyaluronate",
+      "source_url": "https://www.cosrx.com/products/the-retinol-0-1-cream_new-bundle",
+      "checked_on": "2026-10-28",
+      "suitable_for_sensitive": true,
+      "ingredients": [
+        {
+          "name": "Hyaluronic Acid",
+          "concentration": null
+        },
+        {
+          "name": "Retinol",
+          "concentration": "0.1%"
+        }
+      ]
+    },
+    {
+      "key": "cosrx_6_peptide",
+      "brand": "COSRX",
+      "name": "The 6 Peptide Skin Booster Serum",
+      "step_category": "treat",
+      "directions": "2-3 pumps on the face after cleansing, before moisturizer.",
+      "inci_list": "Water, Dipropylene Glycol, Glycerin, Pentylene Glycol, 1,2-Hexanediol, Niacinamide, Acetyl Hexapeptide-8, Copper Tripeptide-1, sh-Polypeptide-121, Dipeptide Diaminobutyroyl Benzylamide Diacetate, Oligopeptide-68, Palmitoyl Tripeptide-8, Allantoin, Sodium Hyaluronate, Acetyl Glucosamine, Serine, Alanine, Glycine, Threonine, Arginine, Proline, Betaine, Sodium PCA, Sodium Lactate, PCA, Glutamic Acid, Lysine HCl, Tocopherol, Dextran, Glycine Soja (Soybean) Oil, Hydrogenated Lecithin, Ammonium Acryloyldimethyltaurate/VP Copolymer, Polyacrylate Crosspolymer-6, Butylene Glycol, Xanthan Gum, Ethylhexylglycerin, Adenosine, Polyquaternium-51, Disodium EDTA, Citric Acid, Caprylyl Glycol, t-Butyl Alcohol, Potassium Sorbate, Sodium Oleate",
+      "source_url": "https://www.cosrx.com/products/the-6-peptide-skin-booster-serum",
+      "checked_on": "2026-10-28",
+      "suitable_for_sensitive": true,
+      "ingredients": [
+        {
+          "name": "Hyaluronic Acid",
+          "concentration": null
+        },
+        {
+          "name": "Niacinamide",
+          "concentration": null
+        },
+        {
+          "name": "Peptides",
+          "concentration": null
+        }
+      ]
+    },
+    {
+      "key": "lrp_effaclar_mat",
+      "brand": "La Roche-Posay",
+      "name": "Effaclar MAT",
+      "step_category": "moisturize",
+      "directions": "Smooth a small amount over face and neck after any serum.",
+      "inci_list": "AQUA / WATER, GLYCERIN, DIMETHICONE, ISOCETYL STEARATE, ALCOHOL DENAT, SILICA [NANO] / SILICA, DIMETHICONE/VINYL DIMETHICONE CROSSPOLYMER, ACRYLAMIDE/SODIUM ACRYLOYLDIMETHYLTAURATE COPOLYMER, METHYL METHACRYLATE CROSSPOLYMER, BUTYLENE GLYCOL, PEG-100 STEARATE, COCAMIDE MEA, SARCOSINE, GLYCERYL STEARATE, TRIETHANOLAMINE, ISOHEXADECANE, PERLITE, CAPRYLOYL SALICYLIC ACID, TETRASODIUM EDTA, PENTYLENE GLYCOL, POLYSORBATE 80, ACRYLATES/C10-30 ALKYL ACRYLATE CROSSPOLYMER, SALICYLIC ACID, PARFUM / FRAGRANCE",
+      "source_url": "https://www.laroche-posay-me.com/en/effaclar/effaclar-mat",
+      "checked_on": "2026-10-28",
+      "suitable_for_sensitive": false,
+      "ingredients": [
+        {
+          "name": "LHA (Capryloyl Salicylic Acid)",
+          "concentration": null
+        },
+        {
+          "name": "Salicylic Acid",
+          "concentration": null
+        },
+        {
+          "name": "Denatured Alcohol",
+          "concentration": null
+        },
+        {
+          "name": "Fragrance (Parfum)",
+          "concentration": null
+        }
+      ]
+    },
+    {
+      "key": "cerave_moisturising_cream",
+      "brand": "CeraVe",
+      "name": "Moisturising Cream",
+      "step_category": "moisturize",
+      "directions": "Smooth a small amount over face and neck after any serum.",
+      "inci_list": "Aqua / Water / Eau, Glycerin, Cetearyl Alcohol, Caprylic/Capric Triglyceride, Cetyl Alcohol, Ceteareth-20, Petrolatum, Potassium Phosphate, Ceramide NP, Ceramide AP, Ceramide EOP, Carbomer, Dimethicone, Behentrimonium Methosulfate, Sodium Lauroyl Lactylate, Sodium Hyaluronate, Cholesterol, Phenoxyethanol, Disodium EDTA, Dipotassium Phosphate, Tocopherol, Phytosphingosine, Xanthan Gum, Ethylhexylglycerin",
+      "source_url": "https://www.cerave.co.uk/skincare/moisturisers/moisturising-cream",
+      "checked_on": "2026-10-28",
+      "suitable_for_sensitive": true,
+      "ingredients": [
+        {
+          "name": "Ceramides",
+          "concentration": null
+        },
+        {
+          "name": "Hyaluronic Acid",
+          "concentration": null
+        }
+      ]
+    },
+    {
+      "key": "bioderma_sensibio_rich",
+      "brand": "Bioderma",
+      "name": "Sensibio Defensive Rich",
+      "step_category": "moisturize",
+      "directions": "Smooth a small amount over face and neck after any serum.",
+      "inci_list": "AQUA/WATER/EAU, GLYCERIN, DICAPRYLYL ETHER, GLYCOL PALMITATE, BUTYLENE GLYCOL, CETYL PALMITATE, GLYCERYL STEARATE CITRATE, SQUALANE, SUCROSE STEARATE, TRIDECYL TRIMELLITATE, GLYCERYL DIBEHENATE, POLYSORBATE 60, PENTYLENE GLYCOL, TRIBEHENIN, GLYCERYL BEHENATE, ACRYLATES/C10-30 ALKYL ACRYLATE CROSSPOLYMER, CAPRYLYL GLYCOL, CARNOSINE, HYDROXYETHYL ACRYLATE/SODIUM ACRYLOYLDIMETHYL TAURATE COPOLYMER, MANNITOL, XYLITOL, TOCOPHEROL, SALVIA MILTIORRHIZA FLOWER/LEAF/ROOT EXTRACT, RHAMNOSE, GLYCINE SOJA (SOYBEAN) OIL, SORBITAN ISOSTEARATE, SODIUM HYDROXIDE, PALMITOYL TETRAPEPTIDE-10",
+      "source_url": "https://www.bioderma.fr/p/crealine-defensive-riche",
+      "checked_on": "2026-10-28",
+      "suitable_for_sensitive": true,
+      "ingredients": [
+        {
+          "name": "Peptides",
+          "concentration": null
+        }
+      ]
+    },
+    {
+      "key": "lrp_toleriane_fluide",
+      "brand": "La Roche-Posay",
+      "name": "Toleriane Dermallergo Fluide",
+      "step_category": "moisturize",
+      "directions": "Smooth a small amount over face and neck after any serum.",
+      "inci_list": "AQUA, GLYCERIN, SQUALANE, PROPANEDIOL, BUTYLENE GLYCOL, BUTYROSPERMUM PARKII BUTTER, PENTYLENE GLYCOL, DIMETHICONE, POLYMETHYLSILSESQUIOXANE, POLYSORBATE 20, GLYCERYL ACRYLATE/ACRYLIC ACID COPOLYMER, DIMETHICONOL, ALUMINUM STARCH OCTENYLSUCCINATE, AMMONIUM POLYACRYLDIMETHYLTAURAMIDE, DISODIUM EDTA, ACETYL DIPEPTIDE-1 CETYL ESTER",
+      "source_url": "https://www.laroche-posay-me.com/en/toleriane/toleriane-ultra-fluide",
+      "checked_on": "2026-10-28",
+      "suitable_for_sensitive": true,
+      "ingredients": [
+        {
+          "name": "Peptides",
+          "concentration": null
+        }
+      ]
+    },
+    {
+      "key": "lrp_anthelios_oil_control",
+      "brand": "La Roche-Posay",
+      "name": "Anthelios UVMune 400 Oil Control Fluid SPF50+",
+      "step_category": "protect",
+      "directions": "Last morning step: about 2 finger-lengths on face and neck; reapply every 2 hours outdoors.",
+      "inci_list": "AQUA / WATER / EAU, ALCOHOL DENAT, SILICA, DIISOPROPYL SEBACATE, ETHYLHEXYL TRIAZONE, BUTYL METHOXYDIBENZOYLMETHANE, BIS-ETHYLHEXYLOXYPHENOL METHOXYPHENYL TRIAZINE, DIISOPROPYL ADIPATE, DICAPRYLYL CARBONATE, GLYCERIN, ISOPROPYL MYRISTATE, PROPANEDIOL, C12-22 ALKYL ACRYLATE/HYDROXYETHYLACRYLATE COPOLYMER, C12-15 ALKYL BENZOATE, DROMETRIZOLE TRISILOXANE, TOCOPHEROL, METHOXYPROPYLAMINO CYCLOHEXENYLIDENE ETHOXYETHYLCYANOACETATE, PERLITE, ACRYLATES/C10-30 ALKYL ACRYLATE CROSSPOLYMER, BIXA ORELLANA SEED EXTRACT, CITRIC ACID, DIETHYLAMINO HYDROXYBENZOYL HEXYL BENZOATE, DISODIUM PHOSPHATE, HYDROXYACETOPHENONE, HYDROXYETHYLCELLULOSE, MALTODEXTRIN, PENTYLENE GLYCOL, POLYGLYCERYL-4 ISOSTEARATE, POLYSORBATE 60, SILICA SILYLATE, SODIUM PHOSPHATE, TEREPHTHALYLIDENE DICAMPHOR SULFONIC ACID, TRIETHANOLAMINE, TRISODIUM ETHYLENEDIAMINE DISUCCINATE, ZINC PCA, PARFUM / FRAGRANCE",
+      "source_url": "https://www.laroche-posay-me.com/en/anthelios/anthelios-uvmune-400-oil-control-fluid-spf50-plus",
+      "checked_on": "2026-10-28",
+      "suitable_for_sensitive": false,
+      "ingredients": [
+        {
+          "name": "Denatured Alcohol",
+          "concentration": null
+        },
+        {
+          "name": "Fragrance (Parfum)",
+          "concentration": null
+        }
+      ]
+    },
+    {
+      "key": "lrp_anthelios_invisible",
+      "brand": "La Roche-Posay",
+      "name": "Anthelios UVMune 400 Invisible Fluid SPF50+ (non-perfumed)",
+      "step_category": "protect",
+      "directions": "Last morning step: about 2 finger-lengths on face and neck; reapply every 2 hours outdoors. Choose the box marked 'non-perfumed' (a perfumed version exists).",
+      "inci_list": "AQUA / WATER / EAU, ALCOHOL DENAT, TRIETHYL CITRATE, DIISOPROPYL SEBACATE, SILICA, ETHYLHEXYL SALICYLATE, BIS-ETHYLHEXYLOXYPHENOL METHOXYPHENYL TRIAZINE, ETHYLHEXYL TRIAZONE, BUTYL METHOXYDIBENZOYLMETHANE, GLYCERIN, PROPANEDIOL, C12-22 ALKYL ACRYLATE/HYDROXYETHYLACRYLATE COPOLYMER, SODIUM CITRATE, METHOXYPROPYLAMINO CYCLOHEXENYLIDENE ETHOXYETHYLCYANOACETATE, PERLITE, TOCOPHEROL, CAPRYLIC/CAPRIC TRIGLYCERIDE, ACRYLATES/C10-30 ALKYL ACRYLATE CROSSPOLYMER, CAPRYLYL GLYCOL, CITRIC ACID, DIETHYLAMINO HYDROXYBENZOYL HEXYL BENZOATE, DROMETRIZOLE TRISILOXANE, HYDROXYETHYLCELLULOSE, TEREPHTHALYLIDENE DICAMPHOR SULFONIC ACID, TRIETHANOLAMINE, TRISODIUM ETHYLENEDIAMINE DISUCCINATE",
+      "source_url": "https://www.laroche-posay-me.com/en/anthelios/anthelios-uvmune/anthelios-uvmune-400-invisible-fluid-spf50-plus-non-perfumed",
+      "checked_on": "2026-10-28",
+      "suitable_for_sensitive": false,
+      "ingredients": [
+        {
+          "name": "Denatured Alcohol",
+          "concentration": null
+        }
+      ]
+    },
+    {
+      "key": "avene_mineral_fluid",
+      "brand": "Avène",
+      "name": "SPF 50+ Mineral Fluid",
+      "step_category": "protect",
+      "directions": "Last morning step: about 2 finger-lengths on face and neck; reapply every 2 hours outdoors.",
+      "inci_list": "ZINC OXIDE [NANO], AVENE THERMAL SPRING WATER (AVENE AQUA), TITANIUM DIOXIDE [NANO], COCO-CAPRYLATE/CAPRATE, ISOCETYL STEAROYL STEARATE, ISOPROPYL PALMITATE, ISODECYL NEOPENTANOATE, ISODODECANE, ISOHEXADECANE, TRIETHYLHEXANOIN, DICAPRYLYL ETHER, PEG-30 DIPOLYHYDROXYSTEARATE, ALUMINA, STEARIC ACID, CAPRYLYL GLYCOL, PEG-45/DODECYL GLYCOL COPOLYMER, SILICA [NANO], BENZOIC ACID, CAPRYLIC/CAPRIC TRIGLYCERIDE, DISODIUM EDTA, DISTEARDIMONIUM HECTORITE, GLYCERYL BEHENATE, GLYCERYL DIBEHENATE, HELIANTHUS ANNUUS (SUNFLOWER) SEED OIL (HELIANTHUS ANNUUS SEED OIL), PENTAERYTHRITYL TETRA-DI-T-BUTYL HYDROXYHYDROCINNAMATE, POLYAMIDE-3, SODIUM CHLORIDE, TOCOPHEROL, TOCOPHERYL GLUCOSIDE, TRIBEHENIN, TRIETHOXYCAPRYLYLSILANE, WATER (AQUA)",
+      "source_url": "https://www.avene.co.uk/p/spf-50-mineral-fluid-3282770148671-b5405ca4",
+      "checked_on": "2026-10-28",
+      "suitable_for_sensitive": true,
+      "ingredients": [
+        {
+          "name": "Zinc Oxide",
+          "concentration": null
+        }
+      ]
+    },
+    {
+      "key": "cerave_spf50_fluid",
+      "brand": "CeraVe",
+      "name": "Invisible Hydrating Fluid Sunscreen SPF50+",
+      "step_category": "protect",
+      "directions": "Last morning step: about 2 finger-lengths on face and neck; reapply every 2 hours outdoors.",
+      "inci_list": "AQUA / WATER, DICAPRYLYL CARBONATE, ETHYLHEXYL TRIAZONE, DIMETHICONE, GLYCERIN, PROPANEDIOL, BIS-ETHYLHEXYLOXYPHENOL METHOXYPHENYL TRIAZINE, PENTYLENE GLYCOL, BUTYL METHOXYDIBENZOYLMETHANE, PHENYLBENZIMIDAZOLE SULFONIC ACID, NIACINAMIDE, METHYLENE BIS-BENZOTRIAZOLYL TETRAMETHYLBUTYLPHENOL [NANO] / METHYLENE BIS-BENZOTRIAZOLYL TETRAMETHYLBUTYLPHENOL, SILICA, DIETHYLAMINO HYDROXYBENZOYL HEXYL BENZOATE, CETEARYL ALCOHOL, HYDROXYETHYL ACRYLATE/SODIUM ACRYLOYLDIMETHYL TAURATE COPOLYMER, TOCOPHEROL, CERAMIDE NP, CERAMIDE AP, CERAMIDE EOP, SORBITAN ISOSTEARATE, CARBOMER, CETEARYL GLUCOSIDE, BEHENTRIMONIUM METHOSULFATE, TRIETHYL CITRATE, SODIUM HYDROXIDE, SODIUM STEAROYL GLUTAMATE, SODIUM LAUROYL LACTYLATE, CELLULOSE, INULIN LAURYL CARBAMATE, CHOLESTEROL, PHENOXYETHANOL, LAUROYL LYSINE, HYDROXYACETOPHENONE, CAPRYLYL GLYCOL, TRISODIUM ETHYLENEDIAMINE DISUCCINATE, XANTHAN GUM, PHYTOSPHINGOSINE, BUTYLENE GLYCOL, POLYGLYCERYL-10 LAURATE, POLYSORBATE 60, BENZOIC ACID",
+      "source_url": "https://www.cerave.co.uk/skincare/spf/invisible-hydrating-fluid-sunscreen-spf50-plus",
+      "checked_on": "2026-10-28",
+      "suitable_for_sensitive": true,
+      "ingredients": [
+        {
+          "name": "Ceramides",
+          "concentration": null
+        },
+        {
+          "name": "Niacinamide",
+          "concentration": null
+        }
+      ]
+    },
+    {
+      "key": "loreal_retinol_serum",
+      "brand": "L'Oréal Paris",
+      "name": "Revitalift Laser 0.2% Pure Retinol Night Serum",
+      "step_category": "treat",
+      "directions": "Pea-sized amount on clean, dry skin, avoiding eyes and lips; moisturizer after; sunscreen every morning. Go up to every night only if the skin stays comfortable.",
+      "inci_list": "AQUA / WATER, GLYCERIN, ALCOHOL DENAT, ISONONYL ISONONANOATE, PENTYLENE GLYCOL, DICAPRYLYL ETHER, GLYCINE SOJA OIL / SOYBEAN OIL, PROPYLENE GLYCOL, PEG-6 CAPRYLIC/CAPRIC GLYCERIDES, CITRIC ACID, PENTAERYTHRITYL TETRA-DI-T-BUTYL HYDROXYHYDROCINNAMATE, SODIUM HYALURONATE, TRISODIUM ETHYLENEDIAMINE DISUCCINATE, RETINOL, DICAPRYLYL CARBONATE, AMMONIUM POLYACRYLOYLDIMETHYL TAURATE, BUTYLENE GLYCOL, CAPRYLYL GLYCOL, GLYCERYL ISOSTEARATE, PPG-6-DECYLTETRADECETH-30, TOCOPHEROL, XANTHAN GUM, BENZYL ALCOHOL, CITRONELLOL, ISOEUGENOL, LIMONENE, LINALOOL, PHENOXYETHANOL, PARFUM / FRAGRANCE",
+      "source_url": "https://www.loreal-paris.co.uk/revitalift/laser-renew/pure-retinol-deep-anti-wrinkle-night-serum-30ml",
+      "checked_on": "2026-10-28",
+      "suitable_for_sensitive": false,
+      "ingredients": [
+        {
+          "name": "Hyaluronic Acid",
+          "concentration": null
+        },
+        {
+          "name": "Retinol",
+          "concentration": "0.2%"
+        },
+        {
+          "name": "Denatured Alcohol",
+          "concentration": null
+        },
+        {
+          "name": "Essential Oils",
+          "concentration": null
+        },
+        {
+          "name": "Fragrance (Parfum)",
+          "concentration": null
+        },
+        {
+          "name": "Propylene Glycol",
+          "concentration": null
+        }
+      ]
+    },
+    {
+      "key": "loreal_ha_serum",
+      "brand": "L'Oréal Paris",
+      "name": "Hyaluron Expert 1.5% Hyaluronic Acid Serum",
+      "step_category": "treat",
+      "directions": "A few drops on clean skin, then moisturizer.",
+      "inci_list": "AQUA / WATER, GLYCERIN, ALCOHOL DENAT, DIMETHICONE, BUTYLENE GLYCOL, DIPROPYLENE GLYCOL, SILICA, SODIUM HYALURONATE, ALPINIA GALANGA LEAF EXTRACT, CARBOMER, METHYLSILANOL/SILICATE CROSSPOLYMER, SODIUM HYDROXIDE, AMMONIUM POLYACRYLDIMETHYLTAURAMIDE / AMMONIUM POLYACRYLOYLDIMETHYL TAURATE, DIPOTASSIUM GLYCYRRHIZATE, DISODIUM EDTA, CAPRYLOYL SALICYLIC ACID, CI 77891 / TITANIUM DIOXIDE, MICA, LINALOOL, CITRONELLOL, BENZYL ALCOHOL, BENZYL BENZOATE, BENZYL SALICYLATE, PARFUM / FRAGRANCE",
+      "source_url": "https://www.loreal-paris.co.uk/revitalift/filler-renew/replumping-serum",
+      "checked_on": "2026-10-28",
+      "suitable_for_sensitive": false,
+      "ingredients": [
+        {
+          "name": "Hyaluronic Acid",
+          "concentration": "1.5%"
+        },
+        {
+          "name": "LHA (Capryloyl Salicylic Acid)",
+          "concentration": null
+        },
+        {
+          "name": "Denatured Alcohol",
+          "concentration": null
+        },
+        {
+          "name": "Essential Oils",
+          "concentration": null
+        },
+        {
+          "name": "Fragrance (Parfum)",
+          "concentration": null
+        }
+      ]
+    },
+    {
+      "key": "loreal_hydra_genius",
+      "brand": "L'Oréal Paris",
+      "name": "Hydra Genius Aloe Water (normal to combination skin)",
+      "step_category": "moisturize",
+      "directions": "Smooth a small amount over face and neck after any serum.",
+      "inci_list": "AQUA / WATER, ALOE BARBADENSIS LEAF JUICE, GLYCERIN, ALCOHOL DENAT, DIMETHICONE, ISONONYL ISONONANOATE, HYALURONIC ACID, MENTHOXYPROPANEDIOL, SILANETRIOL, SODIUM HYALURONATE, TETRASODIUM EDTA, TRIETHANOLAMINE, PANTHENOL, TOCOPHEROL, BIOSACCHARIDE GUM-1, BUTYLENE GLYCOL, CAPRYLYL GLYCOL, CARBOMER, CITRIC ACID, ETHYLHEXYL PALMITATE, HEXYLENE GLYCOL, SILICA DIMETHYL SILYLATE, XANTHAN GUM, DIMETHICONOL, LIMONENE, LINALOOL, CI 42090 / BLUE 1, CHLORPHENESIN, PHENOXYETHANOL, POTASSIUM SORBATE, SODIUM BENZOATE, SORBIC ACID, PARFUM / FRAGRANCE",
+      "source_url": "https://www.loreal-paris.co.uk/hydra-genius/liquid-care-moisturiser-normal-combination-skin",
+      "checked_on": "2026-10-28",
+      "suitable_for_sensitive": false,
+      "ingredients": [
+        {
+          "name": "Hyaluronic Acid",
+          "concentration": null
+        },
+        {
+          "name": "Denatured Alcohol",
+          "concentration": null
+        },
+        {
+          "name": "Essential Oils",
+          "concentration": null
+        },
+        {
+          "name": "Fragrance (Parfum)",
+          "concentration": null
+        }
+      ]
+    },
+    {
+      "key": "avene_comedomed",
+      "brand": "Avène",
+      "name": "Cleanance Comedomed",
+      "step_category": "treat",
+      "directions": "Apply to the whole face or the blemish-prone areas on clean, dry skin.",
+      "inci_list": "AVENE THERMAL SPRING WATER (AVENE AQUA), ISOPROPYL ALCOHOL, PEG-6, GLYCERIN, SILYBUM MARIANUM FRUIT EXTRACT, SILICA, POLYACRYLATE-13, POLYISOBUTENE, POLYSORBATE 20, SORBITAN ISOSTEARATE, WATER (AQUA)",
+      "source_url": "https://www.avene.co.uk/p/cleanance-comedomed-3282770202854-b5405ca4",
+      "checked_on": "2026-10-28",
+      "suitable_for_sensitive": true,
+      "ingredients": []
+    },
+    {
+      "key": "aderma_biology_ac_perfect",
+      "brand": "A-Derma",
+      "name": "Biology AC Perfect Anti-Blemish Fluid",
+      "step_category": "treat",
+      "directions": "Apply to the whole face on clean, dry skin.",
+      "inci_list": "WATER (AQUA), GLYCERIN, CAPRYLIC/CAPRIC TRIGLYCERIDE, PENTYLENE GLYCOL, GLYCERYL STEARATE, CETEARYL ALCOHOL, BEHENYL ALCOHOL, MICROCRYSTALLINE CELLULOSE, LACTIC ACID, SIMMONDSIA CHINENSIS (JOJOBA) SEED OIL (SIMMONDSIA CHINENSIS SEED OIL)*, GARCINIA MANGOSTANA PEEL EXTRACT, SODIUM HYALURONATE, AVENA SATIVA (OAT) FLOWER/LEAF/STEM JUICE (AVENA SATIVA FLOWER/LEAF/STEM JUICE)*, HIBISCUS SABDARIFFA FLOWER EXTRACT, TARAXACUM OFFICINALE (DANDELION) RHIZOME/ROOT EXTRACT (TARAXACUM OFFICINALE RHIZOME/ROOT EXTRACT), ALOE BARBADENSIS LEAF JUICE POWDER*, CETEARYL GLUCOSIDE, FRAGRANCE (PARFUM), HELIANTHUS ANNUUS (SUNFLOWER) SEED OIL (HELIANTHUS ANNUUS SEED OIL), MALTODEXTRIN, SCLEROTIUM GUM, SODIUM BENZOATE, SODIUM HYDROXIDE, SODIUM STEAROYL GLUTAMATE, TOCOPHEROL, XANTHAN GUM",
+      "source_url": "https://www.aderma.fr/fr-fr/p/biology-ac-fluide-anti-imperfections-anti-marques-3282770388886-14c39aab",
+      "checked_on": "2026-10-28",
+      "suitable_for_sensitive": false,
+      "ingredients": [
+        {
+          "name": "Hyaluronic Acid",
+          "concentration": null
+        },
+        {
+          "name": "Lactic Acid",
+          "concentration": null
+        },
+        {
+          "name": "Fragrance (Parfum)",
+          "concentration": null
+        }
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "concern": null,
+      "step_title": "Cleanse",
+      "products": [
+        "cetaphil_gentle",
+        "cerave_foaming",
+        "bioderma_sensibio_gel"
+      ]
+    },
+    {
+      "concern": null,
+      "step_title": "Moisturize",
+      "products": [
+        "lrp_toleriane_fluide",
+        "cerave_moisturising_cream"
+      ]
+    },
+    {
+      "concern": null,
+      "step_title": "Sunscreen",
+      "products": [
+        "lrp_anthelios_invisible",
+        "avene_mineral_fluid",
+        "lrp_anthelios_oil_control"
+      ]
+    },
+    {
+      "concern": "acne",
+      "step_title": "Cleanse",
+      "products": [
+        "cerave_sa_cleanser",
+        "bioderma_sebium_actif"
+      ]
+    },
+    {
+      "concern": "acne",
+      "step_title": "Acne Treatment",
+      "products": [
+        "lrp_effaclar_duo_m",
+        "cerave_blemish_gel",
+        "avene_comedomed",
+        "aderma_biology_ac_perfect"
+      ]
+    },
+    {
+      "concern": "whiteheads",
+      "step_title": "Cleanse",
+      "products": [
+        "cerave_sa_cleanser",
+        "bioderma_sebium_actif"
+      ]
+    },
+    {
+      "concern": "whiteheads",
+      "step_title": "Clogged Pore Treatment",
+      "products": [
+        "cerave_blemish_gel",
+        "lrp_effaclar_duo_m",
+        "avene_comedomed"
+      ]
+    },
+    {
+      "concern": "pustules",
+      "step_title": "Spot Treatment",
+      "products": [
+        "cosrx_pimple_patch",
+        "lrp_effaclar_duo_m"
+      ]
+    },
+    {
+      "concern": "oiliness",
+      "step_title": "Oil Control Serum",
+      "products": [
+        "cosrx_niacinamide_15"
+      ]
+    },
+    {
+      "concern": "oiliness",
+      "step_title": "Moisturize",
+      "products": [
+        "lrp_effaclar_mat",
+        "loreal_hydra_genius",
+        "lrp_toleriane_fluide"
+      ]
+    },
+    {
+      "concern": "dryness",
+      "step_title": "Cleanse",
+      "products": [
+        "cerave_hydrating_cleanser"
+      ]
+    },
+    {
+      "concern": "dryness",
+      "step_title": "Hydrating Serum",
+      "products": [
+        "cosrx_ha3",
+        "loreal_ha_serum"
+      ]
+    },
+    {
+      "concern": "dryness",
+      "step_title": "Deep Moisturize",
+      "products": [
+        "cerave_moisturising_cream",
+        "bioderma_sensibio_rich"
+      ]
+    },
+    {
+      "concern": "redness",
+      "step_title": "Soothing Serum",
+      "products": [
+        "lrp_cicaplast_b5plus",
+        "skin1004_centella_cream"
+      ]
+    },
+    {
+      "concern": "redness",
+      "step_title": "Redness Treatment",
+      "products": [
+        "anua_azelaic_10"
+      ]
+    },
+    {
+      "concern": "redness",
+      "step_title": "Sunscreen",
+      "products": [
+        "avene_mineral_fluid"
+      ]
+    },
+    {
+      "concern": "dark_spots",
+      "step_title": "Brightening Serum",
+      "products": [
+        "cosrx_vitc23"
+      ]
+    },
+    {
+      "concern": "dark_spots",
+      "step_title": "Spot Fading Treatment",
+      "products": [
+        "anua_azelaic_10"
+      ]
+    },
+    {
+      "concern": "dark_spots",
+      "step_title": "Sunscreen",
+      "products": [
+        "lrp_anthelios_invisible",
+        "cerave_spf50_fluid"
+      ]
+    },
+    {
+      "concern": "wrinkles",
+      "step_title": "Anti-Aging Treatment",
+      "products": [
+        "cosrx_retinol_01",
+        "lrp_retinol_b3",
+        "loreal_retinol_serum"
+      ]
+    },
+    {
+      "concern": "wrinkles",
+      "step_title": "Firming Serum",
+      "products": [
+        "cosrx_6_peptide"
+      ]
+    },
+    {
+      "concern": "wrinkles",
+      "step_title": "Sunscreen",
+      "products": [
+        "lrp_anthelios_invisible",
+        "cerave_spf50_fluid"
+      ]
+    }
+  ]
+}

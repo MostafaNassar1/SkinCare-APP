@@ -4,25 +4,34 @@ from sqlalchemy.orm import Session
 
 from app.core.exceptions import AppError
 from app.models import RoutineStep, User
-from app.repositories import ingredient_repository, routine_repository
+from app.repositories import ingredient_repository, product_repository, routine_repository
+from app.schemas.recommendation import OwnProductWarningOut, ProductCardOut, RoutineIn
+from app.schemas.reference import AchievementOut
 from app.schemas.routine import (
     HistoryDayOut,
     HistoryOut,
     RoutineDayOut,
+    RoutineSavedOut,
     RoutineStepOut,
     StepIngredientOut,
     StepLogOut,
     StreakOut,
 )
-from app.schemas.reference import AchievementOut
 from app.services import (
     achievement_service,
     notification_service,
+    routine_builder_service,
     routine_service,
     streak_service,
 )
 from app.services.local_time import user_today
-from app.services.weekdays import from_mask, is_scheduled
+from app.services.routine_builder_service import StepChoice
+from app.services.weekdays import from_mask, to_mask
+
+WARNING_MESSAGES = {
+    "pregnancy": "{ingredient} is not advised during pregnancy or breastfeeding.",
+    "allergy": "You told us you are allergic to {ingredient}.",
+}
 
 
 def _no_routine() -> AppError:
@@ -82,7 +91,11 @@ def log_step(db: Session, user: User, step_id: int) -> StepLogOut:
     if step is None:
         raise _step_not_found()
     today = user_today(user)
-    if not is_scheduled(step.days_of_week, today):
+    if step.needs_product:
+        raise AppError(
+            409, "product_not_ready", "Tap \"I have it now\" once you have this step's product."
+        )
+    if not routine_service.step_counts_on(step, today):
         # e.g. a retinoid advised 2-3 nights a week, on one of its rest days
         raise AppError(
             409, "step_not_scheduled_today", "This step is not part of today's routine."
@@ -124,6 +137,9 @@ def get_day(db: Session, user: User, day: date | None) -> RoutineDayOut:
     done_ids = routine_repository.logged_step_ids(db, user.id, day)
     ingredient_ids = {s.ingredient_id for s in routine.steps if s.ingredient_id is not None}
     names = {i.id: i.name for i in ingredient_repository.get_by_ids(db, ingredient_ids)}
+    products = product_repository.get_by_ids(
+        db, {s.product_id for s in routine.steps if s.product_id is not None}
+    )
 
     def step_out(step: RoutineStep) -> RoutineStepOut:
         return RoutineStepOut(
@@ -141,7 +157,14 @@ def get_day(db: Session, user: User, day: date | None) -> RoutineDayOut:
             ),
             recommended_concentration=step.recommended_concentration,
             days=from_mask(step.days_of_week),
-            scheduled=is_scheduled(step.days_of_week, day),
+            scheduled=routine_service.step_counts_on(step, day),
+            product=(
+                ProductCardOut.model_validate(products[step.product_id])
+                if step.product_id in products
+                else None
+            ),
+            own_product_name=step.custom_product_name,
+            needs_product=step.needs_product,
             done=step.id in done_ids,
         )
 
@@ -159,3 +182,47 @@ def get_day(db: Session, user: User, day: date | None) -> RoutineDayOut:
         done_count=done_count,
         complete=bool(scheduled) and done_count == len(scheduled),
     )
+
+
+def save_routine(db: Session, user: User, body: RoutineIn) -> RoutineSavedOut:
+    """Save the routine as the user wants it (first time and every edit): a new version."""
+    def ticked(step) -> frozenset[int]:
+        return frozenset(step.own_product.ingredient_ids if step.own_product else ())
+
+    choices = [
+        StepChoice(
+            time_of_day=step.time_of_day,
+            mapping_id=step.mapping_id,
+            product_id=step.product_id,
+            own_product_name=step.own_product.name.strip() if step.own_product else None,
+            own_ingredient_ids=ticked(step),
+            has_product=step.has_product,
+            days_of_week=to_mask(step.days) if step.days else None,
+        )
+        for step in body.steps
+    ]
+    result = routine_builder_service.save(db, user, choices)
+    db.commit()
+    return RoutineSavedOut(
+        day=get_day(db, user, None),
+        warnings=[
+            OwnProductWarningOut(
+                step_title=w.step_title,
+                ingredient=w.ingredient,
+                reason=w.reason,
+                message=WARNING_MESSAGES[w.reason].format(ingredient=w.ingredient),
+            )
+            for w in result.warnings
+        ],
+    )
+
+
+def mark_product_ready(db: Session, user: User, step_id: int) -> RoutineDayOut:
+    """ "I have it now": the step counts from today on (reminders, streak)."""
+    step = routine_repository.get_step_in_active_routine(db, user.id, step_id)
+    if step is None:
+        raise _step_not_found()
+    if step.needs_product:  # tapping it twice changes nothing
+        routine_builder_service.mark_product_ready(db, user, step)
+        db.commit()
+    return get_day(db, user, None)

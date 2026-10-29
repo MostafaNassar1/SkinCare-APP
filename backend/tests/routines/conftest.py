@@ -6,7 +6,7 @@ import pytest
 from sqlalchemy.orm import Session
 
 from app.models import Routine, RoutineLog, User
-from app.scripts.create_sample_routine import create_sample_routine
+from tests.sample_routine import create_sample_routine
 from app.services.local_time import user_today, user_zone
 
 
@@ -42,7 +42,7 @@ def log(db: Session, user: User, step_ids, on: date) -> None:
 
 @pytest.fixture
 def routine(db: Session, app_user: User) -> Routine:
-    """The sample routine (adapalene on Mon/Wed/Fri), created 30 days ago."""
+    """The sample routine (retinol on Mon/Wed/Fri), created 30 days ago."""
     routine = create_sample_routine(db, app_user)
     start_routine_on(db, routine, days_back=30)
     return routine

@@ -1,0 +1,165 @@
+{
+  "about": "Official picture of each catalogue product, from the brand's own website (checked 2026-10-29). upload_product_images stores our own copy on Cloudinary; this link is kept as the internal record of where the picture came from (never sent to the app).",
+  "images": [
+    {
+      "brand": "CeraVe",
+      "name": "SA Smoothing Cleanser",
+      "image_source_url": "https://www.cerave.co.uk/-/media/project/loreal/brand-sites/cerave/emea/uk/products/sa-smoothing-cleanser-236ml/sa-smoothing-cleanser-473ml-2-sm.jpg?rev=-1"
+    },
+    {
+      "brand": "La Roche-Posay",
+      "name": "Effaclar Purifying Foaming Gel",
+      "image_source_url": "https://www.laroche-posay-me.com/-/media/project/loreal/brand-sites/lrp/apac/mena/products/effaclar/effaclar-cleansing-foaming-gel/la-roche-posay-productpage-acne-effaclar-cleansing-foaming-gel-400ml-3337872411991-zoom-front-n.png"
+    },
+    {
+      "brand": "Bioderma",
+      "name": "Sébium Gel Moussant Actif",
+      "image_source_url": "https://back-ac-prod.bioderma.com/media/catalog/product/cache/b443460c314aa18d2c50e93a48ddeb50/1/4/141a57e54ac03dcedb74dab48f81c688311a4d4301a70c1b62a08baa8a8afd9c-_7b184068_7d__7bbio_sebium_gel_moussant_actif_7d__7b28667c_7d_1.png"
+    },
+    {
+      "brand": "CeraVe",
+      "name": "Foaming Cleanser",
+      "image_source_url": "https://www.cerave.co.uk/-/media/project/loreal/brand-sites/cerave/emea/uk/products/foaming-cleanser/foaming-cleanser-236ml/foaming-cleanser-236ml-1-lg.jpg?rev=7794ad4da336404b835ea5f1ba1b7f74"
+    },
+    {
+      "brand": "Cetaphil",
+      "name": "Gentle Skin Cleanser",
+      "image_source_url": "https://www.cetaphil.co.uk/dw/image/v2/bggn_prd/on/demandware.static/-/Sites-galderma-uk-m-catalog/default/dwddf7d4dd/REVIVE%202026/Gentle%20Skin%20Cleanser/GSC%20473%201.jpg?sw=900&sh=900&sm=fit&q=85"
+    },
+    {
+      "brand": "CeraVe",
+      "name": "Hydrating Cleanser",
+      "image_source_url": "https://www.cerave.co.uk/-/media/project/loreal/brand-sites/cerave/emea/uk/products/hydrating-cleanser-latest/hydrating-cleanser1l-1-sm.jpg?rev=-1"
+    },
+    {
+      "brand": "Bioderma",
+      "name": "Sensibio Gel Moussant",
+      "image_source_url": "https://back-ac-prod.bioderma.com/media/catalog/product/cache/b443460c314aa18d2c50e93a48ddeb50/2/2/2244d596322923781421fcae15156bdc4568b6e4c8a078696b3e399f91ab455d-_7b183978_7d__7b_7d__7b28712b_7d.jpg"
+    },
+    {
+      "brand": "La Roche-Posay",
+      "name": "Effaclar Duo+M",
+      "image_source_url": "https://www.laroche-posay-me.com/-/media/project/loreal/brand-sites/lrp/apac/mena/products/effaclar/effaclar-duo-plus-m/lrp-effaclar-duo-m-front-pack-rront.png"
+    },
+    {
+      "brand": "CeraVe",
+      "name": "Blemish Control Gel",
+      "image_source_url": "https://www.cerave.co.uk/-/media/project/loreal/brand-sites/cerave/emea/uk/products/latest-packshot-images-for-uk-products/blemish-control-gel/blemish-control-gel-1-sm.jpg?rev=-1"
+    },
+    {
+      "brand": "COSRX",
+      "name": "Acne Pimple Master Patch",
+      "image_source_url": "https://www.cosrx.com/cdn/shop/files/acne-pimple-master-patch-cosrx-official-1_1200x1200.jpg?v=1724835736"
+    },
+    {
+      "brand": "COSRX",
+      "name": "The Niacinamide 15 Serum",
+      "image_source_url": "https://www.cosrx.com/cdn/shop/files/niacin_1200x1200.png?v=1748420816"
+    },
+    {
+      "brand": "COSRX",
+      "name": "The Hyaluronic Acid 3 Serum",
+      "image_source_url": "https://www.cosrx.com/cdn/shop/files/the-hyaluronic-acid-3-serum-cosrx-official-1_1200x1200.jpg?v=1724836664"
+    },
+    {
+      "brand": "Anua",
+      "name": "Azelaic Acid 10 Hyaluron Redness Soothing Serum",
+      "image_source_url": "https://anua.com/cdn/shop/files/anua-us-ampoule-serum-azelaic-acid-10-hyaluron-redness-soothing-serum-1239193732.jpg?v=1779177969&width=2048"
+    },
+    {
+      "brand": "La Roche-Posay",
+      "name": "Cicaplast Baume B5+",
+      "image_source_url": "https://www.laroche-posay-me.com/-/media/project/loreal/brand-sites/lrp/apac/mena/products/cicaplast/cicaplast-baume-b5-plus/larocheposayproductcicaplastbaumeb5100ml3337875816847.png"
+    },
+    {
+      "brand": "SKIN1004",
+      "name": "Madagascar Centella Soothing Cream",
+      "image_source_url": "https://cdn.shopify.com/s/files/1/0590/4538/0253/products/skin1004-cream-centella-soothing-cream-38642833588470.png?v=1677149426"
+    },
+    {
+      "brand": "COSRX",
+      "name": "Advanced The Vitamin C 23 Serum",
+      "image_source_url": "https://www.cosrx.com/cdn/shop/files/Advanced_VitaminC23_00_1200x1200.webp?v=1760935746"
+    },
+    {
+      "brand": "La Roche-Posay",
+      "name": "Retinol B3 Serum",
+      "image_source_url": "https://www.laroche-posay-me.com/-/media/project/loreal/brand-sites/lrp/apac/mena/products/retinol/b3-serum/larocheposay-product-antiaging-retinol-b3serum-30ml-3337878694469-fss-1.png"
+    },
+    {
+      "brand": "COSRX",
+      "name": "The Retinol 0.1 Cream",
+      "image_source_url": "https://www.cosrx.com/cdn/shop/files/RetinolCream_800x1067_7e167f9b-dc45-4d41-babf-65b26b14cf23_1200x1200.jpg?v=1746679017"
+    },
+    {
+      "brand": "COSRX",
+      "name": "The 6 Peptide Skin Booster Serum",
+      "image_source_url": "https://www.cosrx.com/cdn/shop/files/THE_6_PEPTIDE_SKIN_BOOSTER_SERUM___800x1067_1_1200x1200.webp?v=1784097536"
+    },
+    {
+      "brand": "La Roche-Posay",
+      "name": "Effaclar MAT",
+      "image_source_url": "https://www.laroche-posay-me.com/-/media/project/loreal/brand-sites/lrp/apac/mena/products/effaclar/effaclar-mat/la-roche-posay-face-care-effaclar-mat-sebo-controlling-moisturizer-40ml-3337872413025-front.png"
+    },
+    {
+      "brand": "CeraVe",
+      "name": "Moisturising Cream",
+      "image_source_url": "https://www.cerave.co.uk/-/media/project/loreal/brand-sites/cerave/emea/uk/products/moisturising-cream-pot-340g/moisturising-cream-pot-340g-1-sm.jpg?rev=6b36359cd86e4c84bdea2f817a0ce48a"
+    },
+    {
+      "brand": "Bioderma",
+      "name": "Sensibio Defensive Rich",
+      "image_source_url": "https://back-ac-prod.bioderma.com/media/catalog/product/cache/b443460c314aa18d2c50e93a48ddeb50/8/f/8f343813a24d9aafe6db2366c7dbc647-_7b163420_7d__7bbio_crealine_defensive_riche_7d__7b28184w_7d.png"
+    },
+    {
+      "brand": "La Roche-Posay",
+      "name": "Toleriane Dermallergo Fluide",
+      "image_source_url": "https://www.laroche-posay-me.com/-/media/project/loreal/brand-sites/lrp/apac/mena/products/toleriane/ultra-fluide/la-roche-posay-productpage-sensitive-allergic-toleriane-ultra-fluide-40ml-3337872414091-front.png"
+    },
+    {
+      "brand": "La Roche-Posay",
+      "name": "Anthelios UVMune 400 Oil Control Fluid SPF50+",
+      "image_source_url": "https://www.laroche-posay-me.com/-/media/project/loreal/brand-sites/lrp/apac/mena/products/anthelios/anthelios-uvmune-400-oil-control-fluid-spf50-plus/lrp-anthelios-uvmune-400-fluide-oil-ap-50ml-tube-front-new.png"
+    },
+    {
+      "brand": "La Roche-Posay",
+      "name": "Anthelios UVMune 400 Invisible Fluid SPF50+ (non-perfumed)",
+      "image_source_url": "https://www.laroche-posay-me.com/-/media/project/loreal/brand-sites/lrp/apac/my/products/anthelios/anthelios-uvmune-400-invisible-fluid-spf50--plus-non-perfumed/lrpproductpagesunantheliosuvmune400fluidspspf503337875797597frontpng.png"
+    },
+    {
+      "brand": "Avène",
+      "name": "SPF 50+ Mineral Fluid",
+      "image_source_url": "https://media-pierre-fabre.wedia-group.com/api/wedia/dam/transform/u5wa3z31qn5sjgeaie5s4arscxy96p4oxfa67sa/out?t=resize&height=400"
+    },
+    {
+      "brand": "CeraVe",
+      "name": "Invisible Hydrating Fluid Sunscreen SPF50+",
+      "image_source_url": "https://www.cerave.co.uk/-/media/project/loreal/brand-sites/cerave/emea/uk/products/suncare/hydrating-face-fluid/uk-hydrating-face-fluid-1-sm.webp?rev=b556fa122bee4a2da8095507e45cea60"
+    },
+    {
+      "brand": "L'Oréal Paris",
+      "name": "Revitalift Laser 0.2% Pure Retinol Night Serum",
+      "image_source_url": "https://www.loreal-paris.co.uk/-/media/project/loreal/brand-sites/oap/emea/uk/uk-local-content/products/skin-care/t1/3600523971954_t1.png"
+    },
+    {
+      "brand": "L'Oréal Paris",
+      "name": "Hyaluron Expert 1.5% Hyaluronic Acid Serum",
+      "image_source_url": "https://www.loreal-paris.co.uk/-/media/project/loreal/brand-sites/oap/emea/uk/uk-local-content/products/skin-care/t1/3600522892342_t1.png"
+    },
+    {
+      "brand": "L'Oréal Paris",
+      "name": "Hydra Genius Aloe Water (normal to combination skin)",
+      "image_source_url": "https://www.loreal-paris.co.uk/-/media/project/loreal/brand-sites/oap/emea/uk/uk-local-content/products/skin-care/t1/3600523363186_t1.png"
+    },
+    {
+      "brand": "Avène",
+      "name": "Cleanance Comedomed",
+      "image_source_url": "https://media-pierre-fabre.wedia-group.com/api/wedia/dam/transform/u5wa3z31qn5sepjsrpih6p5tix8oqxwu9tmn4po/out?t=resize&height=400"
+    },
+    {
+      "brand": "A-Derma",
+      "name": "Biology AC Perfect Anti-Blemish Fluid",
+      "image_source_url": "https://media-pierre-fabre.wedia-group.com/api/wedia/dam/transform/u5wa3z31qn5sjnh4fzdnom5cdao1qira4q8xkno/out?t=resize&height=400"
+    }
+  ]
+}

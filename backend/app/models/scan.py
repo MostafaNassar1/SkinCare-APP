@@ -28,7 +28,7 @@ class SkinConcern(Base):
     name: Mapped[str] = mapped_column(String(50), unique=True)  # acne, oiliness, ...
     display_name: Mapped[str] = mapped_column(String(100))  # "Dark spots"
     description: Mapped[str | None] = mapped_column(Text)
-    detection_method: Mapped[str] = mapped_column(String(10), server_default="photo")
+    detection_method: Mapped[str] = mapped_column(String(20), server_default="photo")
 
 
 class ScanResult(Base):

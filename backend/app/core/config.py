@@ -70,6 +70,12 @@ class Settings(BaseSettings):
     # puts the server to sleep). Empty = the endpoint does not exist (404).
     scheduler_secret: SecretStr = SecretStr("")
 
+    # Cloudinary (free plan; delivery checked from Lebanon without VPN on 2026-10-29): our own
+    # copies of the product pictures (later also the scan photos). Empty = no uploads.
+    cloudinary_cloud_name: str = ""
+    cloudinary_api_key: str = ""
+    cloudinary_api_secret: SecretStr = SecretStr("")
+
     @field_validator("smtp_password", mode="before")
     @classmethod
     def remove_spaces(cls, value: object) -> object:

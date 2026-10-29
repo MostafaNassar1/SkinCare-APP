@@ -12,6 +12,7 @@ NORMAL = {
     "flaking": "rarely",
     "pores": "barely",
     "reactions": "never",
+    "redness": "rarely",
     "sun": "type_3",
     "pregnancy": "no",
 }
@@ -24,14 +25,15 @@ def submit(client: TestClient, headers: dict, **changes):
 # ---------- The questions ----------
 
 
-def test_quiz_lists_seven_questions_without_login(client: TestClient):
+def test_quiz_lists_eight_questions_without_login(client: TestClient):
     response = client.get("/skin-quiz")
 
     assert response.status_code == 200
     body = response.json()
     assert body["version"] == QUIZ_VERSION
     assert [q["id"] for q in body["questions"]] == [
-        "after_washing", "midday_shine", "flaking", "pores", "reactions", "sun", "pregnancy",
+        "after_washing", "midday_shine", "flaking", "pores", "reactions", "redness", "sun",
+        "pregnancy",
     ]  # fmt: skip
     sun = next(q for q in body["questions"] if q["id"] == "sun")
     assert len(sun["options"]) == 6  # one per Fitzpatrick type
@@ -179,3 +181,48 @@ def test_invalid_answers_save_nothing(client: TestClient, user_headers):
 
 def test_submitting_requires_login(client: TestClient):
     assert client.post("/me/skin-quiz", json={"answers": NORMAL}).status_code == 401
+
+
+# ---------- Redness (quiz v2) ----------
+
+
+@pytest.mark.parametrize(
+    ("answer", "redness"),
+    [("rarely", None), ("sometimes", "mild"), ("often", "moderate"),
+     ("most_of_the_time", "severe")],
+)  # fmt: skip
+def test_redness_answer_gives_the_redness_concern(
+    client: TestClient, user_headers: dict, answer, redness
+):
+    response = submit(client, user_headers, redness=answer)
+
+    assert response.status_code == 200
+    assert response.json()["redness"] == redness
+
+
+def test_redness_is_separate_from_reactions_to_products(client: TestClient, user_headers: dict):
+    body = submit(client, user_headers, reactions="often", redness="rarely").json()
+
+    assert body["skin_type"] == "sensitive" and body["redness"] is None
+
+
+def test_the_redness_question_is_required(client: TestClient, user_headers: dict):
+    answers = {k: v for k, v in NORMAL.items() if k != "redness"}
+
+    response = client.post("/me/skin-quiz", headers=user_headers, json={"answers": answers})
+
+    assert response.status_code == 422
+    fields = [d["field"] for d in response.json()["error"]["details"]]
+    assert fields == ["answers.redness"]
+
+
+def test_v1_answers_have_no_redness():
+    from app.services.skin_quiz_service import redness_from_saved
+
+    v1 = {"version": 1, "answers": {k: v for k, v in NORMAL.items() if k != "redness"}}
+
+    assert redness_from_saved(v1) is None
+    assert redness_from_saved(None) is None
+    assert redness_from_saved({"version": 2, "answers": NORMAL | {"redness": "often"}}) == (
+        "moderate"
+    )

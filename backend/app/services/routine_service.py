@@ -32,5 +32,18 @@ def find_routine_on(db: Session, user: User, day: date) -> Routine | None:
     return routine_on(routine_repository.list_for_user(db, user.id), day, user)
 
 
+def step_counts_on(step: RoutineStep, day: date) -> bool:
+    """Whether the step is due on `day`: one of its weekdays, and the user has its product.
+
+    A step waiting for its product (needs_product) is left out of reminders and streaks; once
+    the user taps "I have it now" it counts from that day (product_ready_on), never before.
+    """
+    if step.needs_product:
+        return False
+    if step.product_ready_on is not None and day < step.product_ready_on:
+        return False
+    return is_scheduled(step.days_of_week, day)
+
+
 def scheduled_steps(routine: Routine, day: date) -> list[RoutineStep]:
-    return [step for step in routine.steps if is_scheduled(step.days_of_week, day)]
+    return [step for step in routine.steps if step_counts_on(step, day)]

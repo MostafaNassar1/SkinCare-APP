@@ -54,6 +54,7 @@ def submit_answers(db: Session, user: User, data: SkinQuizAnswers) -> SkinQuizRe
         skin_type=result.skin_type,
         fitzpatrick_scale=result.fitzpatrick_scale,
         is_pregnant_or_breastfeeding=profile.is_pregnant_or_breastfeeding,
+        redness=result.redness,
         completed_at=profile.skin_quiz_completed_at,
         oil_score=result.oil_score,
         dry_score=result.dry_score,

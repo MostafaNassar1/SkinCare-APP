@@ -7,13 +7,20 @@ SKIN_TYPES = ("oily", "dry", "combination", "normal", "sensitive")
 
 # ordered from least to most severe (the rules engine compares positions)
 SEVERITIES = ("mild", "moderate", "severe")
-DETECTION_METHODS = ("photo", "hybrid")  # hybrid = photo + skin quiz
+# where a concern comes from (migration 0010): the photo models, or the skin quiz alone
+# (oiliness, dryness, redness: no reliable licensed photo data for them)
+DETECTION_METHODS = ("photo", "questionnaire")
 DETECTION_SOURCES = ("photo", "questionnaire", "photo_and_questionnaire")
 
 # ordered as the steps appear in a routine
 STEP_CATEGORIES = ("cleanse", "treat", "moisturize", "protect")
 RULE_TIMES_OF_DAY = ("morning", "evening", "both")  # 'both' is expanded into two steps
 STEP_TIMES_OF_DAY = ("morning", "evening")
+# active = a skincare ingredient the rules recommend; allergen = a common cause of skin
+# allergies in products (fragrance, preservatives...), only used to filter products (0010)
+INGREDIENT_KINDS = ("active", "allergen")
+# a user's own product sent to the admin review list (migration 0011)
+PRODUCT_SUGGESTION_STATUSES = ("pending", "added", "rejected")
 
 ACHIEVEMENT_CRITERIA = ("streak_days", "scans_completed", "routine_adherence")
 

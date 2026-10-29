@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.core.security import create_access_token
 from app.models import Appointment, Clinic, Routine, RoutineLog, User, UserProfile
-from app.scripts.create_sample_routine import create_sample_routine
+from tests.sample_routine import create_sample_routine
 from app.services.local_time import user_today
 from app.services.routine_service import scheduled_steps
 

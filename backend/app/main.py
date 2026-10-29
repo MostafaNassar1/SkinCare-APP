@@ -23,6 +23,7 @@ from app.routes import (
     notification_routes,
     places_routes,
     profile_routes,
+    recommendation_routes,
     reference_routes,
     routine_routes,
     skin_quiz_routes,
@@ -70,6 +71,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(achievement_routes.router)
     app.include_router(routine_routes.router)
     app.include_router(routine_routes.streak_router)
+    app.include_router(recommendation_routes.router)
     app.include_router(places_routes.router)
     app.include_router(appointment_routes.router)
     app.include_router(notification_routes.router)

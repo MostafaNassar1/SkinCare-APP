@@ -34,11 +34,34 @@ def deactivate_all(db: Session, user_id: int) -> None:
     )
 
 
-def create(db: Session, *, user_id: int, steps: list[RoutineStep]) -> Routine:
-    routine = Routine(user_id=user_id, is_active=True, steps=steps)
+def create(
+    db: Session, *, user_id: int, steps: list[RoutineStep], scan_result_id: int | None = None
+) -> Routine:
+    routine = Routine(user_id=user_id, scan_result_id=scan_result_id, is_active=True, steps=steps)
     db.add(routine)
     db.flush()
     return routine
+
+
+def delete_routine(db: Session, routine: Routine) -> None:
+    """Remove a routine version with its steps and their ticks (ON DELETE CASCADE)."""
+    db.delete(routine)
+    db.flush()
+
+
+def move_logs(db: Session, *, user_id: int, log_date: date, moves: dict[int, int]) -> None:
+    """Re-attach that day's ticks from old step ids to new ones (old id -> new id): a tick is
+    moved, never copied, so badges that count ticks are not inflated."""
+    for old_id, new_id in moves.items():
+        db.execute(
+            update(RoutineLog)
+            .where(
+                RoutineLog.user_id == user_id,
+                RoutineLog.log_date == log_date,
+                RoutineLog.routine_step_id == old_id,
+            )
+            .values(routine_step_id=new_id)
+        )
 
 
 def logged_step_ids(db: Session, user_id: int, log_date: date) -> set[int]:

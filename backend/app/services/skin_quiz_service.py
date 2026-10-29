@@ -1,8 +1,9 @@
 """The onboarding skin quiz: its questions and how the answers become a skin type.
 
-The quiz is the PRIMARY signal for oiliness and dryness (hybrid decision); the photo model is a
-supporting signal. Questions are original (not copied from a copyrighted questionnaire) and are
-defined only here, so the app shows whatever this file contains.
+The quiz is the ONLY source of oiliness and dryness (and of redness from quiz v2): no reliable
+licensed photo data exists for them (Phase 3 decision, migration 0010). Questions are original
+(not copied from a copyrighted questionnaire) and are defined only here, so the app shows
+whatever this file contains.
 
 Scoring:
 - Each answer may add points to an oil score and/or a dry score, and may be a T-zone sign
@@ -12,11 +13,16 @@ Scoring:
   dry >= 3 and dry > oil -> "dry"; anything else -> "normal".
 - The sun question gives the Fitzpatrick skin tone type (1-6), used to check the AI model's
   accuracy per skin tone.
+- Quiz v2 (2026-10-29): the redness question gives the redness concern of the routine (rarely ->
+  none, sometimes -> mild, often -> moderate, most of the time with small visible blood vessels
+  -> severe, which refers the user to a dermatologist instead of treating it). It asks about
+  redness the face has on its own; reactions to products are the "reactions" question
+  (sensitive skin). Answers of v1 have no redness answer: no redness until the quiz is retaken.
 """
 
 from dataclasses import dataclass
 
-QUIZ_VERSION = 1  # stored with the answers, so the quiz can change without breaking old results
+QUIZ_VERSION = 2  # stored with the answers, so the quiz can change without breaking old results
 
 
 @dataclass(frozen=True)
@@ -26,6 +32,7 @@ class Option:
     oil: int = 0
     dry: int = 0
     t_zone: bool = False
+    redness: str | None = None  # the redness concern's severity (quiz v2)
 
 
 @dataclass(frozen=True)
@@ -86,6 +93,23 @@ QUESTIONS: tuple[Question, ...] = (
         ),
     ),
     Question(
+        "redness",
+        "How often does your face look red or flushed (cheeks, nose, chin), even when you have "
+        "not tried a new product?",
+        (
+            Option("rarely", "Rarely or never"),
+            Option("sometimes", "Sometimes, and it fades quickly", redness="mild"),
+            Option(
+                "often", "Often (with heat, sun or spicy food), and it lasts a while",
+                redness="moderate",
+            ),
+            Option(
+                "most_of_the_time", "Most of the time, with small visible blood vessels",
+                redness="severe",
+            ),
+        ),
+    ),
+    Question(
         "sun",
         "What happens when you spend time in the sun without sunscreen?",
         (
@@ -116,6 +140,7 @@ class QuizResult:
     skin_type: str
     fitzpatrick_scale: int
     is_pregnant_or_breastfeeding: bool | None  # None = "prefer not to say": leave the flag as is
+    redness: str | None  # severity of the redness concern, None = no redness
     oil_score: int
     dry_score: int
 
@@ -161,6 +186,15 @@ def score(answers: dict[str, str]) -> QuizResult:
         skin_type=skin_type,
         fitzpatrick_scale=int(answers["sun"].removeprefix("type_")),
         is_pregnant_or_breastfeeding=pregnancy,
+        redness=QUESTIONS_BY_ID["redness"].option(answers["redness"]).redness,
         oil_score=oil,
         dry_score=dry,
     )
+
+
+def redness_from_saved(saved: dict | None) -> str | None:
+    """The redness severity of the saved quiz answers ({"version", "answers"}); None for no
+    redness, no quiz yet, or a v1 quiz (taken before the redness question existed)."""
+    answer = ((saved or {}).get("answers") or {}).get("redness")
+    option = QUESTIONS_BY_ID["redness"].option(answer) if answer else None
+    return option.redness if option else None

@@ -1,4 +1,8 @@
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from app.models.choices import INGREDIENT_KINDS
 
 OTHER_ALLERGIES_MAX_LENGTH = 1000
 
@@ -10,6 +14,9 @@ class IngredientOut(BaseModel):
     name: str
     description: str | None
     avoid_during_pregnancy: bool
+    # active = skincare ingredient (e.g. Retinol); allergen = common cause of product allergies
+    # (e.g. Fragrance): the app can show them as two groups on the allergy screen
+    kind: Literal[INGREDIENT_KINDS]
 
 
 class AllergiesOut(BaseModel):
