@@ -101,7 +101,9 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   `routine_service` (routine on a day), `streak_service` (shared by streak, history and badges),
   `achievement_service` (progress + `award_new`, also to be called after scans in Phase 3),
   `routine_reminder_service` (reminder text). Dev: `python -m app.scripts.create_sample_routine
-  --email ...` (adapalene Mon/Wed/Fri). Use `RETURNING` (not rowcount) to detect ORM inserts.
+  --email ...` (saves the engine's Top picks for the user's current concerns; tests use the FIXED
+  routine in `tests/sample_routine.py`, retinol Mon/Wed/Fri). Use `RETURNING` (not rowcount) to
+  detect ORM inserts.
 - Map & appointment endpoints (Step 10): `GET /places?bbox=s,w,n,e&type=clinics|pharmacies|all`
   (max 500 markers + `truncated`), `GET /places/nearby?lat=&lon=&type=&radius_km=&limit=` (closest
   first, `distance_km`), `GET /places/{id}` (+ `osm_url`); public, cached, every answer carries
@@ -110,7 +112,25 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   (status "scheduled" → completed/cancelled; only clinics/doctors/hospitals; aware datetimes, within
   365 days; 409 `appointment_closed` / `appointment_not_yet`). Map tiles: OSM tiles are free for
   light use only; a provider's free tier would be needed at scale (limitation for the report).
-- Never commit when the test run reports failures (a commit went through once on 2026-10-15).
+- Recommendation & routine-saving endpoints (Phase 3 Step 2): `GET /me/recommendations` (concerns
+  with about/routine_focus/expect/advice, steps with every safe product best first: image_url,
+  directions, key_ingredients, top_pick, where_to_buy = "Available in pharmacies" +
+  `/places/nearby?type=pharmacies`; skipped steps with reason + message; see_dermatologist;
+  disclaimer), `PUT /me/routine` (save = edit: the whole routine as the user wants it; each step =
+  time_of_day + mapping_id + product_id | own_product {name, ingredient_ids} + has_product + days;
+  409 `steps_conflict`, 422 `unknown_step` / `product_not_suitable` / `empty_routine`),
+  `POST /me/routine/steps/{id}/product-ready` ("I have it now"; ticking before it: 409
+  `product_not_ready`). Services: `recommendation_service.propose` (proposal), `concern_service`
+  (latest scan + quiz), `routine_builder_service.save` (checks, own-product warnings, alternate
+  nights, new version), `concern_explanation_service`, `routine_service.step_counts_on` (needs_product
+  steps never counted). Tests in `tests/recommendations/` (`add_scan` helper in its conftest).
+- Product pictures: Cloudinary (`CLOUDINARY_CLOUD_NAME/API_KEY/API_SECRET` in `.env`, key needs the
+  upload/"create" permission), `services/image_storage_service.py` (downloads with a browser UA,
+  max 10 MB, shrunk to 800 px). `python -m app.scripts.upload_product_images [--force] [--dry-run]`
+  reads `app/scripts/data/product_images.json` (brand websites only) → `products.image_url`
+  (+ `image_source_url`, internal). Dev DB: all 32 pictures uploaded on 2026-10-29.
+- Never commit when the test run reports failures (a commit went through once on 2026-10-15, and
+  again on 2026-10-29 because the suite and the commit ran in parallel: always wait for the result).
 - No login rate limiting (user's decision): list it as a known limitation in the report.
 - Settings added in Step 5: `BCRYPT_ROUNDS` (default 12; tests use 4 for speed),
   `EMAIL_CHECK_DELIVERABILITY` (DNS domain check at sign-up, `services/email_domain_service.py`;
@@ -120,8 +140,16 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   non-unique token_hash. `0004` = user_profiles.skin_notes. `0005` = routine_steps.days_of_week +
   user_profiles reminder settings. `0006` = clinics.category. `0007` = appointments status
   "scheduled" (default) + doctor_name. `0008` = notifications title + dedupe_key. `0009` = weather tips skin_type + priority,
-  conditions windy/polluted, 12 new tips (18 total), user_profiles.daily_forecast_enabled. Dev DB
-  is at `0009` with the 1,332 imported places.
+  conditions windy/polluted, 12 new tips (18 total), user_profiles.daily_forecast_enabled.
+  `0010` = whiteheads + pustules concerns, detection_method photo/questionnaire, ingredients.kind
+  + 9 allergens, rules.days_of_week, products / product_ingredients / rule_products /
+  routine_step_products, routine_steps.product_id/needs_product/product_ready_on. `0011` = cosmetics
+  only (acne adapalene rule off; whiteheads/acne/pustules rules → non-prescription products, no
+  ingredient), Lactic Acid / LHA / Retinal / Retinyl Palmitate + 24 conflicts (32 total),
+  products.suitable_for_sensitive/image_url/image_source_url, routine_steps.custom_product_name,
+  routine_step_ingredients, product_suggestions. `0012` = the catalogue from
+  `alembic/versions/data/0012_catalogue.json` (32 products, 86 ingredient links, 44 rule links).
+  Dev DB is at `0012` with the 1,332 imported places.
 - Run: `cd backend; .venv\Scripts\activate; uvicorn app.main:app --reload` → http://127.0.0.1:8000/docs
 - Tests: `cd backend; .venv\Scripts\activate; pytest`. `tests/conftest.py` recreates
   `skincare_app_test` (name must end in `_test`) with `alembic upgrade head` each run, drops it at
@@ -163,12 +191,49 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
     never "healthy skin". Photos private in Cloudinary.
   - Steps: 1 datasets & licences (spike) · 2 rules engine + product catalogue + quiz v2 ·
     3 YOLO detector · 4 U-Net · 5 scans in the backend · 6 integration.
+- **Rules engine & catalogue (Phase 3 Step 2, decided 2026-10-27 → 2026-10-29; product research
+  and the case-by-case matrix in `Final Year Project\Documentation\Phase 3 Product Recommendation
+  Matrix.pdf`):**
+  - Cosmetics only: Differin (adapalene) and benzoyl peroxide are medicines in Lebanon → no
+    medicine is ever recommended; moderate acne/whiteheads get "ask a pharmacist or dermatologist".
+  - Catalogue: 32 real products, 10 brands sold in Lebanon (CeraVe, La Roche-Posay, Bioderma,
+    Cetaphil, Avène, A-Derma, COSRX, Anua, SKIN1004, L'Oréal Paris), every INCI list checked on
+    the brand's official page (2026-10-28). Left out: unverifiable lists (CeraVe HA serum + Oil
+    Control, SKIN1004 sun serum, Eucerin) and 8 products with no slot or unsafe extras.
+  - The app NEVER shows where products were found (no shop names/links anywhere, tested); where to
+    buy = "Available in pharmacies" + the map of the nearest pharmacies (user's GPS).
+  - Every safe product of a step is shown, best first, "Top pick" on the first; the user chooses
+    one or "I'll use my own product" (ticked ingredients → pregnancy/allergy warnings; the name
+    goes to the admin review list `product_suggestions`, reviewed in Phase 7).
+  - Filters: pregnancy (retinoids), declared allergies (a fragrance allergy also removes essential
+    oils), sensitive skin (`suitable_for_sensitive` = false for fragrance, alcohol denat. and strong
+    products). Unsafe products are removed, never moved down. A treatment without a safe product
+    is skipped with its reason; cleanse/moisturize/protect fall back to the base products.
+  - Several concerns = one combined routine. Treatments with the same products are merged (acne +
+    whiteheads; redness + dark spots azelaic). Clashing treatments (ingredient_conflicts) go on
+    different nights (retinol Mon/Wed/Fri, acid treatment the other nights; two daily ones split
+    4 + 3 nights); no night left → 409, the user picks another product (never chosen silently).
+  - Severe concern → no treatment step, gentle base routine + dermatologist referral.
+  - Concerns are decided by the SERVER (latest scan + skin quiz), never sent by the phone. Quiz:
+    oily/combination → oiliness, dry → dryness (mild); quiz v2 redness question → redness mild /
+    moderate / severe (most of the time + visible small blood vessels = severe = referral).
+  - Saving = editing (change product, own product, remove a step with a warning in the app,
+    change days without clashes, bring a step back): each save is a new routine version; past
+    days keep theirs; today's ticks move to the new version; a version replaced on its own day is
+    deleted. "I don't have it yet" steps don't count until "I have it now".
+  - Pictures: our own Cloudinary copies of the brands' official packshots (delivery works in
+    Lebanon without VPN; the dashboard needs a VPN). Sensibio Defensive Rich uses the French
+    "Créaline" pack picture (same cream). Copyright of packshots = limitation for the report.
+  - Labelling for Step 3: done by the student (pimple types on ~200 photos), with a
+    self-consistency check; described honestly in the report (no dermatologist).
 - **Routines & streaks (decided 2026-10-14):** a streak day = ALL steps scheduled for that day done
   (the user's rule); steps have scheduled weekdays so retinoids advised "2-3 nights a week" are
   never needed on rest days (Claude's safety fix, agreed). Only today can be ticked; past days are
   view-only. Reminders at 08:00 / 21:00 local by default (user-editable), sent by the Step 11
   scheduler. Badges: streak badges awarded on the LONGEST streak, progress shows the current one;
   earned badges are kept forever; each award saves an "achievement" notification row.
+- **Skin quiz v2 (Phase 3 Step 2, 2026-10-29):** + the "redness" question (after "reactions"),
+  `QUIZ_VERSION = 2`; the result shows `redness`; v1 answers give no redness until retaken.
 - **Skin quiz v1 (Step 7):** 7 original questions defined only in
   `services/skin_quiz_service.py` (served by `GET /skin-quiz`; `POST /me/skin-quiz` scores and
   saves, retaking replaces). Rules: reactions "often" → sensitive (safety first); oil ≥ 4 and
@@ -193,7 +258,7 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   (reference data the app needs). Both SQL files are **FROZEN**: every schema/data change is a new
   Alembic migration. Commands (from `backend/`): `alembic upgrade head`, `alembic current`,
   `alembic check` (models vs DB), `alembic revision --autogenerate -m "..."`.
-- Recommended libraries: google-auth (Google ID tokens), PyJWT, bcrypt used directly (not passlib / python-jose).
+- Recommended libraries: google-auth (Google ID tokens), PyJWT, bcrypt used directly (not passlib / python-jose), cloudinary (MIT, pictures).
 - **Sign-up/login = Instagram-style (decided 2026-10-12):** email/password (any real provider) OR
   "Continue with Google". Email sign-up creates an UNVERIFIED account and emails a 6-digit code;
   the user enters it in the app → verified + logged in. Login of an unverified account → 403
@@ -256,7 +321,8 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   `invalid_event_time` beyond 5 years). `GET /me/calendar.ics` (RFC 5545 by hand in
   `services/ics_service.py`: CRLF, 75-byte folding, escaping, UTC times, stable UIDs; last 30 days +
   next 365; appointments 1 h with a 2 h alarm, cancelled = STATUS:CANCELLED; `no-store`).
-- Open decisions: hosting, Cloudinary upload flow; weather = Open-Meteo.
+- Open decisions: hosting; the scan-photo upload flow (Step 5: private photos, deleted with the
+  account; Cloudinary is chosen for pictures); weather = Open-Meteo.
 - The local DB password is the PostgreSQL default (same as the username): fine for local
   development only, **must be changed to a strong one before hosting**.
 
@@ -321,4 +387,10 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   largest = one patient, 15 visits); YOLO trains on whole ACNE04 photos (13% have no detectable face).
   Rules for manual corrections in DATASETS.md (log every change, never edit expert grades or
   frozen test labels).
-- **NEXT: Phase 3 Step 2** (rules engine + real product catalogue + skin quiz v2).
+  PR #14 squash-merged, tag `phase3-step1`.
+- Bug PR #15 (2026-10-29): routine test helper made "N days ago" with N x 24 h, which crossed local
+  midnight after the daylight-saving change (failed 22:00-24:00 only); now local noon N days ago.
+- Phase 3 Step 2 (rules engine + 32-product catalogue + pictures + quiz v2 + explanations;
+  migrations 0010-0012): done 2026-10-29 on branch `mostafa/feature/phase3-step2-rules-engine`,
+  813 tests (see "Rules engine & catalogue").
+- **NEXT: Phase 3 Step 3** (YOLO pimple detector; the student labels pimple types first).
