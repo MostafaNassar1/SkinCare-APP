@@ -23,7 +23,8 @@ class RoutineStepOut(BaseModel):
     ingredient: StepIngredientOut | None
     recommended_concentration: str | None  # e.g. "0.5-2%"
     days: list[str]  # scheduled weekdays, e.g. ["mon", "wed", "fri"]
-    scheduled: bool  # part of THIS day (e.g. retinol only on its nights)
+    scheduled: bool  # part of THIS day (e.g. retinol only on its nights; not while waiting)
+    needs_product: bool  # the user does not have the product yet: not counted until they do
     done: bool
 
 

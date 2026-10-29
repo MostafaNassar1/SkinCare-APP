@@ -63,6 +63,8 @@ class ProposedStep:
     title: str
     product_type: str
     description: str | None
+    ingredient_id: int | None
+    recommended_concentration: str | None
     days_of_week: int
     mapping_id: int  # the rule the step comes from (the highest-priority one when merged)
     priority: int
@@ -104,7 +106,7 @@ def propose(db: Session, user: User, concerns: Mapping[str, str]) -> Proposal:
         ]
     )
 
-    safety = _safety(db, user)
+    safety = safety_for(db, user)
     ingredient_ids = product_repository.ingredient_ids_of_products(
         db, {product.id for step in steps for product in step.candidates}
     )
@@ -158,6 +160,8 @@ def _step(
         title=rule.step_title,
         product_type=rule.product_type,
         description=rule.notes,
+        ingredient_id=rule.ingredient_id,
+        recommended_concentration=rule.recommended_concentration,
         days_of_week=rule.days_of_week,
         mapping_id=rule.id,
         priority=rule.priority,
@@ -211,7 +215,8 @@ def _absorb(into: ProposedStep, other: ProposedStep) -> None:
     into.priority = max(into.priority, other.priority)
 
 
-def _safety(db: Session, user: User) -> Safety:
+def safety_for(db: Session, user: User) -> Safety:
+    """The user's pregnancy, allergies and skin type, as product filters."""
     profile = user.profile
     allergies = {i.name: i.id for i in ingredient_repository.list_allergies(db, user.id)}
     avoid = set(allergies.values())

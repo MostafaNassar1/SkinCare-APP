@@ -1,13 +1,15 @@
 from collections.abc import Iterable
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models import (
     ConcernRecommendationMapping,
     Ingredient,
+    IngredientConflict,
     Product,
     ProductIngredient,
+    ProductSuggestion,
     RuleProduct,
     SkinConcern,
 )
@@ -59,3 +61,30 @@ def ingredient_ids_by_name(db: Session) -> dict[str, int]:
 
 def pregnancy_unsafe_ingredient_ids(db: Session) -> set[int]:
     return set(db.scalars(select(Ingredient.id).where(Ingredient.avoid_during_pregnancy)))
+
+
+def conflict_pairs(db: Session) -> dict[frozenset[int], str]:
+    """{ingredient a, ingredient b} -> why they should not be used together."""
+    return {
+        frozenset((a, b)): reason
+        for a, b, reason in db.execute(
+            select(
+                IngredientConflict.ingredient_a_id,
+                IngredientConflict.ingredient_b_id,
+                IngredientConflict.reason,
+            )
+        )
+    }
+
+
+def add_suggestion(db: Session, *, user_id: int, name: str, step_category: str) -> None:
+    """Put a user's own product on the admin review list (once per user and name)."""
+    already = db.scalar(
+        select(ProductSuggestion.id).where(
+            ProductSuggestion.user_id == user_id,
+            func.lower(ProductSuggestion.name) == name.lower(),
+            ProductSuggestion.status == "pending",
+        )
+    )
+    if already is None:
+        db.add(ProductSuggestion(user_id=user_id, name=name, step_category=step_category))

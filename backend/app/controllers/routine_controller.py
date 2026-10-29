@@ -22,7 +22,7 @@ from app.services import (
     streak_service,
 )
 from app.services.local_time import user_today
-from app.services.weekdays import from_mask, is_scheduled
+from app.services.weekdays import from_mask
 
 
 def _no_routine() -> AppError:
@@ -82,7 +82,11 @@ def log_step(db: Session, user: User, step_id: int) -> StepLogOut:
     if step is None:
         raise _step_not_found()
     today = user_today(user)
-    if not is_scheduled(step.days_of_week, today):
+    if step.needs_product:
+        raise AppError(
+            409, "product_not_ready", "Tap \"I have it now\" once you have this step's product."
+        )
+    if not routine_service.step_counts_on(step, today):
         # e.g. a retinoid advised 2-3 nights a week, on one of its rest days
         raise AppError(
             409, "step_not_scheduled_today", "This step is not part of today's routine."
@@ -141,7 +145,8 @@ def get_day(db: Session, user: User, day: date | None) -> RoutineDayOut:
             ),
             recommended_concentration=step.recommended_concentration,
             days=from_mask(step.days_of_week),
-            scheduled=is_scheduled(step.days_of_week, day),
+            scheduled=routine_service.step_counts_on(step, day),
+            needs_product=step.needs_product,
             done=step.id in done_ids,
         )
 
