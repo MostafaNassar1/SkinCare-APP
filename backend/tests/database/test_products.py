@@ -77,7 +77,8 @@ def test_retinoid_rules_start_three_nights_a_week(db: Session):
         )
     ).all()
 
-    assert len(rules) == 3  # adapalene for acne and whiteheads, retinol for wrinkles
+    # adapalene for acne (deactivated in 0011, cosmetics only) and retinol for wrinkles
+    assert len(rules) == 2
     assert {rule.days_of_week for rule in rules} == {1 + 4 + 16}  # Mon, Wed, Fri
     others = db.scalars(
         select(ConcernRecommendationMapping.days_of_week).where(
@@ -96,10 +97,13 @@ def test_new_concerns_have_their_rules(db: Session):
         ("cleanse", "mild"),
         ("treat", "moderate"),
     ]
-    assert whiteheads[1].ingredient_id == ingredient_id(db, "Adapalene")
     assert whiteheads[1].time_of_day == "evening"
     assert [(r.step_category, r.time_of_day) for r in pustules] == [("treat", "evening")]
-    assert pustules[0].ingredient_id == ingredient_id(db, "Benzoyl Peroxide")
+    # cosmetics only (0011): the products are chosen per rule, not one medicine ingredient
+    assert whiteheads[1].ingredient_id is None and whiteheads[1].product_type == (
+        "Non-prescription unclogging treatment"
+    )
+    assert pustules[0].product_type == "Hydrocolloid pimple patch"
 
 
 def test_allergens_are_never_pregnancy_flags(db: Session):

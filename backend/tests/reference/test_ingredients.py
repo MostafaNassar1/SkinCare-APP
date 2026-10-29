@@ -6,8 +6,9 @@ def test_ingredient_list_is_public_and_sorted(client: TestClient):
 
     assert response.status_code == 200
     names = [ingredient["name"] for ingredient in response.json()]
-    assert len(names) == 22  # the seeded reference data: 13 actives + 9 allergens (0010)
-    assert names == sorted(names)
+    # the seeded reference data: 13 actives + 9 allergens (0010) + 4 actives (0011)
+    assert len(names) == 26
+    assert names == sorted(names, key=str.casefold)  # alphabetical, ignoring case
 
 
 def test_ingredients_show_the_pregnancy_warning(client: TestClient):

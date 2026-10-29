@@ -106,6 +106,10 @@ class RoutineStep(Base):
         CheckConstraint(
             "NOT (needs_product AND product_ready_on IS NOT NULL)", name="product_ready_check"
         ),
+        # a catalogue product or the user's own product, never both
+        CheckConstraint(
+            "product_id IS NULL OR custom_product_name IS NULL", name="one_product_check"
+        ),
         UniqueConstraint("routine_id", "time_of_day", "step_order"),
     )
 
@@ -136,6 +140,9 @@ class RoutineStep(Base):
     product_id: Mapped[int | None] = mapped_column(
         ForeignKey("products.id", ondelete="RESTRICT")
     )
+    # the user's own product, not in the catalogue ("I'll use my own product", migration 0011);
+    # the ingredients they tick are in routine_step_ingredients
+    custom_product_name: Mapped[str | None] = mapped_column(String(200))
     needs_product: Mapped[bool] = mapped_column(server_default=false())
     product_ready_on: Mapped[date | None]
 

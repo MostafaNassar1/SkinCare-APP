@@ -19,6 +19,8 @@ STEP_TIMES_OF_DAY = ("morning", "evening")
 # active = a skincare ingredient the rules recommend; allergen = a common cause of skin
 # allergies in products (fragrance, preservatives...), only used to filter products (0010)
 INGREDIENT_KINDS = ("active", "allergen")
+# a user's own product sent to the admin review list (migration 0011)
+PRODUCT_SUGGESTION_STATUSES = ("pending", "added", "rejected")
 
 ACHIEVEMENT_CRITERIA = ("streak_days", "scans_completed", "routine_adherence")
 
