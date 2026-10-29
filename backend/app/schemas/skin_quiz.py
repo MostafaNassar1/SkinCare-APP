@@ -3,7 +3,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from app.models.choices import SKIN_TYPES
+from app.models.choices import SEVERITIES, SKIN_TYPES
 
 
 class QuizOptionOut(BaseModel):
@@ -31,6 +31,7 @@ class SkinQuizResultOut(BaseModel):
     skin_type: Literal[SKIN_TYPES]
     fitzpatrick_scale: int
     is_pregnant_or_breastfeeding: bool
+    redness: Literal[SEVERITIES] | None  # the redness concern from the quiz (None = no redness)
     completed_at: datetime
     # shown for transparency: how the skin type was reached
     oil_score: int

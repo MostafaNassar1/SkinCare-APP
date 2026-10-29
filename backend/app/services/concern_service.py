@@ -4,7 +4,7 @@ The routine is built from the latest face scan + the skin quiz, never from a lis
 phone (it could claim concerns the scan did not find). Quiz concerns (no reliable photo data):
 - skin type oily -> oiliness, dry -> dryness, combination -> oiliness (its oily zone is the part
   that needs care), all mild; normal and sensitive add none (sensitive turns on the gentle-product
-  filter instead). Redness comes from the quiz v2 question.
+  filter instead). Redness comes from the quiz v2 redness question (mild / moderate / severe).
 When the scan and the quiz report the same concern, the more severe answer wins.
 """
 
@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from app.models import User
 from app.repositories import scan_repository
+from app.services import skin_quiz_service
 from app.services.recommendation_service import SEVERITY_LEVEL
 
 SKIN_TYPE_CONCERNS = {"oily": "oiliness", "dry": "dryness", "combination": "oiliness"}
@@ -35,6 +36,14 @@ def current_concerns(db: Session, user: User) -> CurrentConcerns:
 
 
 def quiz_concerns(user: User) -> dict[str, str]:
-    skin_type = user.profile.skin_type if user.profile else None
-    concern = SKIN_TYPE_CONCERNS.get(skin_type)
-    return {concern: "mild"} if concern else {}
+    profile = user.profile
+    if profile is None:
+        return {}
+    concerns = {}
+    concern = SKIN_TYPE_CONCERNS.get(profile.skin_type)
+    if concern:
+        concerns[concern] = "mild"
+    redness = skin_quiz_service.redness_from_saved(profile.skin_quiz_answers)
+    if redness:
+        concerns["redness"] = redness
+    return concerns

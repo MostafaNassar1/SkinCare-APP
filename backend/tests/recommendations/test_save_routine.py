@@ -88,6 +88,27 @@ def test_quiz_concerns_by_skin_type(db: Session, app_user, skin_type, expected):
     assert concern_service.current_concerns(db, app_user).concerns == expected
 
 
+def test_redness_comes_from_the_quiz(db: Session, app_user):
+    app_user.profile.skin_type = "dry"
+    app_user.profile.skin_quiz_answers = {"version": 2, "answers": {"redness": "often"}}
+    scan(db, app_user, redness="mild")
+
+    # the quiz says moderate, the scan mild: the more severe answer wins
+    assert concern_service.current_concerns(db, app_user).concerns == {
+        "redness": "moderate",
+        "dryness": "mild",
+    }
+
+
+def test_severe_redness_from_the_quiz_refers_to_a_dermatologist(db: Session, app_user):
+    app_user.profile.skin_quiz_answers = {"version": 2, "answers": {"redness": "most_of_the_time"}}
+
+    result = proposal(db, app_user)
+
+    assert result.see_dermatologist == ["redness"]
+    assert all("redness" not in s.concerns for s in result.steps)
+
+
 # ---------- saving the choices ----------
 
 
