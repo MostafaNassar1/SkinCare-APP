@@ -1,13 +1,13 @@
 """Fixtures and helpers for routine tests."""
 
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 
 import pytest
 from sqlalchemy.orm import Session
 
 from app.models import Routine, RoutineLog, User
 from app.scripts.create_sample_routine import create_sample_routine
-from app.services.local_time import user_today
+from app.services.local_time import user_today, user_zone
 
 
 def days_ago(user: User, days: int) -> date:
@@ -23,8 +23,15 @@ def last_weekday(user: User, weekday: int) -> date:
 
 
 def start_routine_on(db: Session, routine: Routine, days_back: int) -> None:
-    """Pretend the routine was created `days_back` days ago."""
-    routine.created_at = datetime.now(UTC) - timedelta(days=days_back)
+    """Pretend the routine was created `days_back` days ago (the user's local days).
+
+    Noon on that local date, not "now minus N x 24 hours": across a daylight-saving change
+    (Lebanon, late October) N x 24 hours before a late-evening run lands just after midnight
+    of the NEXT local day, and the routine would be one day younger than intended.
+    """
+    user = db.get(User, routine.user_id)
+    day = days_ago(user, days_back)
+    routine.created_at = datetime.combine(day, time(12), tzinfo=user_zone(user))
     db.flush()
 
 
