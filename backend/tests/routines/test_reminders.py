@@ -86,10 +86,13 @@ def test_clock_uses_the_12_hour_format(at, text):
 
 
 def test_evening_reminder_lists_the_steps_in_order():
-    reminder = build_reminder("evening", ["Cleanse", "Acne Treatment", "Moisturize"], time(21, 0))
+    titles = ["Cleanse", "Anti-Aging Treatment", "Moisturize"]
+    reminder = build_reminder("evening", titles, time(21, 0))
 
     assert reminder.title == "🌙 It's 9:00 PM"
-    assert reminder.body == "Time for your evening routine: Cleanse → Acne Treatment → Moisturize."
+    assert reminder.body == (
+        "Time for your evening routine: Cleanse → Anti-Aging Treatment → Moisturize."
+    )
 
 
 def test_morning_reminder_has_a_sun():

@@ -7,7 +7,7 @@ import pytest
 from sqlalchemy.orm import Session
 
 from app.models import Notification, Routine, User
-from app.scripts.create_sample_routine import create_sample_routine
+from tests.sample_routine import create_sample_routine
 
 BEIRUT = ZoneInfo("Asia/Beirut")
 
@@ -23,6 +23,6 @@ def saved(db: Session, user: User) -> list[Notification]:
 
 @pytest.fixture
 def routine(db: Session, app_user: User) -> Routine:
-    """Mild-acne sample routine: 4 morning steps; evening Cleanse, Acne Treatment (Mon/Wed/Fri
+    """Sample routine: 4 morning steps; evening Cleanse, Anti-Aging Treatment (Mon/Wed/Fri
     only), Moisturize. Reminders at the defaults, 08:00 and 21:00 (Asia/Beirut)."""
     return create_sample_routine(db, app_user)

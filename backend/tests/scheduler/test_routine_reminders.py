@@ -33,7 +33,7 @@ def test_evening_reminder_lists_the_steps_of_the_day(db: Session, app_user, rout
     assert reminder.type == "reminder"
     assert reminder.title == "🌙 It's 9:02 PM"
     assert reminder.message == (
-        "Time for your evening routine: Cleanse → Acne Treatment → Moisturize."
+        "Time for your evening routine: Cleanse → Anti-Aging Treatment → Moisturize."
     )
     assert reminder.dedupe_key == "routine-evening:2026-10-19"
 
@@ -59,7 +59,7 @@ def test_only_the_steps_not_done_yet(db: Session, app_user, routine):
     run_due(db, beirut(MONDAY, 21, 2))
 
     assert saved(db, app_user)[0].message == (
-        "Time for your evening routine: Acne Treatment → Moisturize."
+        "Time for your evening routine: Anti-Aging Treatment → Moisturize."
     )
 
 
@@ -127,7 +127,7 @@ def test_a_late_evening_reminder_crosses_midnight(db: Session, app_user: User, r
 
     [reminder] = saved(db, app_user)
     assert reminder.dedupe_key == "routine-evening:2026-10-19"
-    assert "Acne Treatment" in reminder.message  # Monday's steps, not Tuesday's
+    assert "Anti-Aging Treatment" in reminder.message  # Monday's steps, not Tuesday's
 
 
 def test_reminders_switched_off(db: Session, app_user: User, routine):

@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.controllers import routine_controller
 from app.core.security import create_access_token
 from app.models import Routine, RoutineLog, User, UserProfile
-from app.scripts.create_sample_routine import create_sample_routine
+from tests.sample_routine import create_sample_routine
 from tests.routines.conftest import last_weekday, start_routine_on
 
 MONDAY, TUESDAY = 0, 1
@@ -96,7 +96,7 @@ def test_untick(client, db, user_headers, app_user, routine, today_is):
 def test_retinoid_cannot_be_ticked_on_its_rest_day(client, user_headers, routine, today_is):
     today_is(TUESDAY)
 
-    response = tick(client, user_headers, step_id(routine, "Acne Treatment"))
+    response = tick(client, user_headers, step_id(routine, "Anti-Aging Treatment"))
 
     assert response.status_code == 409
     assert response.json()["error"]["code"] == "step_not_scheduled_today"
@@ -104,7 +104,7 @@ def test_retinoid_cannot_be_ticked_on_its_rest_day(client, user_headers, routine
 
 def test_retinoid_can_be_ticked_on_its_night(client, user_headers, routine, today_is):
     today_is(MONDAY)
-    assert tick(client, user_headers, step_id(routine, "Acne Treatment")).status_code == 200
+    assert tick(client, user_headers, step_id(routine, "Anti-Aging Treatment")).status_code == 200
 
 
 @pytest.mark.parametrize(("weekday", "steps"), [(MONDAY, 7), (TUESDAY, 6)])
