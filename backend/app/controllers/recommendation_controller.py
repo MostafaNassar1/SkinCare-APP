@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from app.models import User
+from app.models import SkinConcern, User
 from app.repositories import product_repository, skin_concern_repository
 from app.schemas.recommendation import (
     ConcernOut,
@@ -9,7 +9,7 @@ from app.schemas.recommendation import (
     RecommendedStepOut,
     SkippedStepOut,
 )
-from app.services import concern_service, recommendation_service
+from app.services import concern_explanation_service, concern_service, recommendation_service
 from app.services.weekdays import from_mask
 
 DISCLAIMER = (
@@ -31,12 +31,11 @@ def get_recommendations(db: Session, user: User) -> RecommendationsOut:
     proposal = recommendation_service.propose(db, user, current.concerns)
     shown = {p.id for step in proposal.steps for p in step.products}
     ingredients = product_repository.key_ingredients(db, shown)
-    display_names = {c.name: c.display_name for c in skin_concern_repository.list_all(db)}
+    known = {c.name: c for c in skin_concern_repository.list_all(db)}
 
     return RecommendationsOut(
         concerns=[
-            ConcernOut(name=name, display_name=display_names[name], severity=severity)
-            for name, severity in current.concerns.items()
+            _concern_out(known[name], severity) for name, severity in current.concerns.items()
         ],
         steps=[
             RecommendedStepOut(
@@ -75,4 +74,17 @@ def get_recommendations(db: Session, user: User) -> RecommendationsOut:
         ],
         see_dermatologist=proposal.see_dermatologist,
         disclaimer=DISCLAIMER,
+    )
+
+
+def _concern_out(concern: SkinConcern, severity: str) -> ConcernOut:
+    explanation = concern_explanation_service.explain(concern.name, severity)
+    return ConcernOut(
+        name=concern.name,
+        display_name=concern.display_name,
+        severity=severity,
+        about=concern.description,
+        routine_focus=explanation.routine_focus,
+        expect=explanation.expect,
+        advice=explanation.advice,
     )

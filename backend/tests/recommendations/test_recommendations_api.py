@@ -58,10 +58,12 @@ def test_recommendations_show_real_products_and_where_to_buy(
 
     body = get_recommendations(client, user_headers)
 
-    assert body["concerns"] == [
-        {"name": "acne", "display_name": "Acne", "severity": "mild"},
-        {"name": "oiliness", "display_name": "Oiliness", "severity": "mild"},
+    assert [(c["name"], c["display_name"], c["severity"]) for c in body["concerns"]] == [
+        ("acne", "Acne", "mild"),
+        ("oiliness", "Oiliness", "mild"),
     ]
+    acne = body["concerns"][0]
+    assert acne["about"] and acne["routine_focus"] and acne["expect"] and acne["advice"] is None
     serum = next(s for s in body["steps"] if s["title"] == "Oil Control Serum")
     assert serum["concerns"] == ["oiliness"] and serum["days"] == [
         "mon", "tue", "wed", "thu", "fri", "sat", "sun"

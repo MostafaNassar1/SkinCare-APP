@@ -38,6 +38,10 @@ class ConcernOut(BaseModel):
     name: str
     display_name: str
     severity: Literal[SEVERITIES]
+    about: str | None  # what the concern is
+    routine_focus: str  # what the routine does for it
+    expect: str | None  # when results usually show (None for a severe concern)
+    advice: str | None  # when to ask a pharmacist / dermatologist (None = nothing to add)
 
 
 class RecommendedStepOut(BaseModel):
