@@ -13,9 +13,11 @@
   h1 { font-size: 20px; margin: 0; }
   .bar { height: 8px; background: var(--panel); border-radius: 4px; margin: 10px 0 14px; overflow: hidden; }
   .bar div { height: 100%; background: var(--accent); width: 0; }
-  .pictures { display: flex; gap: 12px; flex-wrap: wrap; }
-  figure { margin: 0; flex: 1 1 300px; }
+  main { max-width: 1280px; }
+  .pictures { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-start; }
+  figure { margin: 0; flex: 1 1 280px; }
   figure img { width: 100%; aspect-ratio: 1; display: block; background: var(--panel); border-radius: 6px; }
+  figure img.face { aspect-ratio: auto; max-height: 560px; object-fit: contain; }
   figcaption { color: var(--muted); font-size: 13px; margin-top: 4px; }
   .keys { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; margin: 14px 0; }
   button { background: var(--panel); color: var(--text); border: 2px solid transparent; border-radius: 6px;
@@ -38,7 +40,8 @@
   <section id="work">
     <div class="pictures">
       <figure><img id="close" alt="Close-up of the circled spot"><figcaption>Close-up (no marks)</figcaption></figure>
-      <figure><img id="context" alt="The spot in its part of the face, circled"><figcaption>Around it (the spot is circled)</figcaption></figure>
+      <figure><img id="context" alt="The spot in its part of the face, circled"><figcaption>Around it (cyan = this spot, grey = other circled spots)</figcaption></figure>
+      <figure><img id="face" class="face" alt="The whole face, the spot circled"><figcaption>Whole face (cyan = this spot)</figcaption></figure>
     </div>
     <div class="keys">
       <button data-label="whitehead"><b>1 Whitehead</b><small>Small closed bump, skin-coloured or white, not red</small></button>
@@ -77,6 +80,7 @@
       const id = encodeURIComponent(current.id);
       document.getElementById("close").src = `/picture/close/${id}`;
       document.getElementById("context").src = `/picture/context/${id}`;
+      document.getElementById("face").src = `/picture/face/${id}`;
       document.getElementById("split").textContent = `Photo set: ${current.split}`;
     }
   }

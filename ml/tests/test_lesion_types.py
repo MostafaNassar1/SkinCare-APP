@@ -142,13 +142,18 @@ def labelling(monkeypatch, tmp_path):
     monkeypatch.setenv("SKINCARE_DATA_DIR", str(tmp_path))
     photo = tmp_path / "sources" / "acne04" / "face.jpg"
     photo.parent.mkdir(parents=True)
-    Image.new("RGB", (800, 600), (200, 150, 130)).save(photo)
+    Image.new("RGB", (800, 600), (200, 150, 130)).save(photo, "PNG")  # lossless: exact colours
     queue = {"round": 1, "items": [
         {"id": f"acne04/face.jpg#{n}", "file": "acne04/face.jpg", "box": [100 + 50 * n, 100,
          130 + 50 * n, 130], "split": "test", "grade": "mild"} for n in range(3)]}  # fmt: skip
     folder = tmp_path / "prepared" / "lesion_types"
     folder.mkdir(parents=True)
     (folder / "round1_queue.json").write_text(json.dumps(queue))
+    manifests = tmp_path / "prepared" / "manifests"
+    manifests.mkdir()
+    boxes = [item["box"] for item in queue["items"]] + [[500, 100, 530, 130]]  # + one not queued
+    (manifests / "pimples.json").write_text(json.dumps({"images": [
+        {"file": "acne04/face.jpg", "boxes": [{"type": "lesion", "box": b} for b in boxes]}]}))
     monkeypatch.syspath_prepend(str(SCRIPTS))
     sys.modules.pop("label_types", None)
     import label_types
@@ -177,6 +182,24 @@ def test_round_pictures_are_jpegs(labelling):
 
     with Image.open(__import__("io").BytesIO(data)) as picture:
         assert picture.size == (420, 420)
+
+
+@pytest.mark.parametrize("kind", ["context", "face"])
+def test_context_and_face_circle_this_spot_bright_and_the_others_dim(labelling, kind):
+    import label_types
+
+    colours = {colour for _, colour in labelling.render("acne04/face.jpg#0", kind).getcolors()}
+
+    assert label_types.CURRENT_RING[0] in colours  # this spot: bright cyan
+    assert label_types.OTHER_RING[0] in colours  # the photo's other circles: light grey
+
+
+def test_close_up_has_no_marks_and_face_keeps_the_photo_shape(labelling):
+    close = labelling.render("acne04/face.jpg#0", "close")
+    face = labelling.render("acne04/face.jpg#0", "face")
+
+    assert {colour for _, colour in close.getcolors()} == {(200, 150, 130)}
+    assert face.size == (640, 480)  # 800 x 600 shrunk to 640 on its longest side
 
 
 def test_module_documents_every_type():

@@ -32,7 +32,11 @@ from skincare_ml.lesion_types import (
 
 PAGE = Path(__file__).with_name("label_types.html")
 CLOSE_UP = (3.0, 64, 420)  # circle size x3 (at least 64 px), shown at 420 px
-CONTEXT = (10.0, 500, 420)  # circle size x10 (at least 500 px), circle drawn
+CONTEXT = (10.0, 500, 420)  # circle size x10 (at least 500 px), circles drawn
+FACE_SIZE = 640  # the whole photo, longest side in px, circles drawn
+KINDS = ("close", "context", "face")
+CURRENT_RING = ((0, 230, 255), 3)  # the circle to type: bright cyan
+OTHER_RING = ((215, 215, 215), 1)  # the photo's other expert circles: thin light grey
 
 
 class Round:
@@ -43,6 +47,13 @@ class Round:
         self.by_id = {item["id"]: item for item in self.items}
         self.answers_file = folder / f"round{number}_answers.jsonl"
         self.sources = config.data_dir() / "sources"
+        manifest = json.loads(
+            (config.prepared_dir() / "manifests" / "pimples.json").read_text(encoding="utf-8")
+        )
+        # every expert circle of each photo, to show that the face's other pimples are marked too
+        self.all_boxes = {
+            image["file"]: [b["box"] for b in image["boxes"]] for image in manifest["images"]
+        }
 
     def state(self) -> dict:
         answers = load_answers(self.answers_file)
@@ -71,27 +82,56 @@ class Round:
             before = [i for i in answered if self.items.index(self.by_id[i]) < position]
             save_answer(self.answers_file, (before or answered)[-1], None)
 
-    def picture(self, item_id: str, kind: str) -> bytes:
+    def render(self, item_id: str, kind: str) -> Image.Image:
+        """close: the spot, no marks; context: the area around it; face: the whole photo.
+        The last two circle the spot (bright) and the photo's other expert circles (dim)."""
         item = self.by_id[item_id]
         image = _photo(str(self.sources / item["file"]))
-        scale, minimum, shown = CLOSE_UP if kind == "close" else CONTEXT
-        area = crop_square(tuple(item["box"]), image.width, image.height, scale, minimum)
-        picture = image.crop(area).resize((shown, shown), Image.LANCZOS)
-        if kind == "context":
-            factor = shown / (area[2] - area[0])
-            x1, y1, x2, y2 = item["box"]
-            ring = [(x1 - area[0]) * factor - 4, (y1 - area[1]) * factor - 4,
-                    (x2 - area[0]) * factor + 4, (y2 - area[1]) * factor + 4]  # fmt: skip
-            ImageDraw.Draw(picture).ellipse(ring, outline=(0, 230, 255), width=2)
+        if kind == "face":
+            area = (0, 0, image.width, image.height)
+            picture = _face(str(self.sources / item["file"])).copy()
+        else:
+            scale, minimum, shown = CLOSE_UP if kind == "close" else CONTEXT
+            area = crop_square(tuple(item["box"]), image.width, image.height, scale, minimum)
+            picture = image.crop(area).resize((shown, shown), Image.LANCZOS)
+        if kind != "close":
+            draw = ImageDraw.Draw(picture)
+            factor = picture.width / (area[2] - area[0])
+            for box in self.all_boxes.get(item["file"], []):
+                if box != item["box"]:
+                    _ring(draw, box, area, factor, *OTHER_RING)
+            _ring(draw, item["box"], area, factor, *CURRENT_RING)  # drawn last: on top
+        return picture
+
+    def picture(self, item_id: str, kind: str) -> bytes:
         buffer = io.BytesIO()
-        picture.save(buffer, "JPEG", quality=92)
+        self.render(item_id, kind).save(buffer, "JPEG", quality=92)
         return buffer.getvalue()
+
+
+def _ring(draw, box, area, factor, colour, width) -> None:
+    """A circle around an expert box, in the coordinates of the shown picture."""
+    x1, y1, x2, y2 = box
+    if x2 < area[0] or y2 < area[1] or x1 > area[2] or y1 > area[3]:
+        return  # outside the shown part of the face
+    # at least 7 px across, so a small spot stays visible on the whole-face picture
+    cx, cy = ((x1 + x2) / 2 - area[0]) * factor, ((y1 + y2) / 2 - area[1]) * factor
+    radius = max((x2 - x1) * factor / 2 + 4, 7)
+    draw.ellipse([cx - radius, cy - radius, cx + radius, cy + radius], outline=colour, width=width)
 
 
 @lru_cache(maxsize=3)
 def _photo(path: str) -> Image.Image:
     with Image.open(path) as image:
         return image.convert("RGB")
+
+
+@lru_cache(maxsize=3)
+def _face(path: str) -> Image.Image:
+    """The whole photo, shrunk once (several circles of a photo come one after another)."""
+    face = _photo(path).copy()
+    face.thumbnail((FACE_SIZE, FACE_SIZE), Image.LANCZOS)
+    return face
 
 
 def make_handler(labelling: Round):
@@ -118,7 +158,7 @@ def make_handler(labelling: Round):
             elif path.startswith("/picture/"):
                 _, _, kind, item_id = path.split("/", 3)
                 item_id = unquote(item_id)
-                if kind not in ("close", "context") or item_id not in labelling.by_id:
+                if kind not in KINDS or item_id not in labelling.by_id:
                     self.send_json({"error": "not found"}, 404)
                     return
                 self.send(labelling.picture(item_id, kind), "image/jpeg")
