@@ -1,0 +1,159 @@
+"""Labelling the TYPE of each expert acne circle (Phase 3 Step 3, decided 2026-11-01).
+
+Two stages (the student's decision): YOLO learns to FIND every pimple from all the expert circles
+(1,167 photos, no new labels needed); a small second model learns the TYPE of each found pimple
+from close-ups labelled by the student here. Five answers per close-up:
+
+- whitehead: small closed bump, skin-coloured or white, not red
+- papule:    small red bump without a white / yellow centre (inflamed)
+- pustule:   red base with a white / yellow centre of pus (inflamed)
+- other:     blackhead, large deep lump (nodule), mark or scar
+- unclear:   not a pimple, or cannot tell (blurry, hair, freckle, circle on nothing)
+
+Papule + pustule = inflamed lesions, which the Hayashi scale counts (counting every circle agreed
+with the expert grade on only 31% of photos, Step 1). Definitions follow the American Academy of
+Dermatology; the report states that the types were labelled by a non-expert.
+
+A round is a queue of close-ups: test-set photos first (so their labels can be frozen before any
+training), at most a few circles per photo (variety), tiny circles skipped, and ~10% hidden
+repeats placed far after their first showing, to measure the labeller's self-consistency.
+Answers are appended to a JSON-lines file (the last answer for an item wins), never rewritten.
+"""
+
+import json
+import random
+from collections import Counter
+from collections.abc import Iterable
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from pathlib import Path
+
+TYPES = ("whitehead", "papule", "pustule", "other", "unclear")
+INFLAMED = ("papule", "pustule")
+SPLIT_ORDER = ("test", "val", "train")  # test first: frozen before training
+MIN_BOX_PX = 10  # smaller circles cannot be typed by eye
+MAX_PER_PHOTO = 3
+REPEAT_SHARE = 0.10
+REPEAT_GAP = 50  # a repeat comes at least this many close-ups after the first showing
+
+
+@dataclass(frozen=True)
+class Item:
+    id: str  # "<photo file>#<circle index>", or "repeat:<id>" for a hidden repeat
+    file: str  # photo path inside the sources folder
+    box: tuple[float, float, float, float]  # x1, y1, x2, y2 in pixels
+    split: str
+    grade: str
+
+    @property
+    def circle_id(self) -> str:
+        return self.id.removeprefix("repeat:")
+
+    @property
+    def is_repeat(self) -> bool:
+        return self.id.startswith("repeat:")
+
+
+def make_queue(
+    images: list[dict], size: int, seed: int, skip: Iterable[str] = ()
+) -> list[Item]:
+    """`size` new close-ups from the manifest's images (+ ~10% hidden repeats), test first.
+
+    The share of each split follows the photos (about 70 / 15 / 15); circles already labelled in
+    earlier rounds (`skip`) are never picked again.
+    """
+    rng = random.Random(seed)
+    skip = set(skip)
+    by_split: dict[str, list[Item]] = {split: [] for split in SPLIT_ORDER}
+    for image in images:
+        candidates = [
+            Item(f"{image['file']}#{index}", image["file"], tuple(b["box"]), image["split"],
+                 image["expert_grade"])
+            for index, b in enumerate(image["boxes"])
+            if b["box"][2] - b["box"][0] >= MIN_BOX_PX
+            and f"{image['file']}#{index}" not in skip
+        ]  # fmt: skip
+        rng.shuffle(candidates)
+        by_split[image["split"]].extend(candidates[:MAX_PER_PHOTO])
+
+    total = sum(len(items) for items in by_split.values())
+    picked: list[Item] = []
+    for split in SPLIT_ORDER:
+        pool = by_split[split]
+        rng.shuffle(pool)
+        share = round(size * len(pool) / total) if total else 0
+        chosen = pool[:share]
+        chosen.sort(key=lambda item: item.file)  # same photo together: faster to load
+        picked.extend(chosen)
+    picked = picked[:size]
+    return _add_repeats(picked, rng)
+
+
+def _add_repeats(items: list[Item], rng: random.Random) -> list[Item]:
+    count = round(len(items) * REPEAT_SHARE)
+    if count == 0 or len(items) <= REPEAT_GAP:
+        return items
+    queue = list(items)
+    for original in rng.sample(items[: len(items) - REPEAT_GAP], count):
+        first = queue.index(original)
+        position = rng.randint(first + REPEAT_GAP, len(queue))
+        queue.insert(position, Item(f"repeat:{original.id}", original.file, original.box,
+                                    original.split, original.grade))  # fmt: skip
+    return queue
+
+
+# ---------- close-ups ----------
+
+
+def crop_square(
+    box: tuple[float, float, float, float], width: int, height: int, scale: float, minimum: int
+) -> tuple[int, int, int, int]:
+    """A square around the circle, `scale` times its size (at least `minimum` px), inside the
+    photo (shifted, not cut, at the edges)."""
+    x1, y1, x2, y2 = box
+    side = min(max(int(max(x2 - x1, y2 - y1) * scale), minimum), width, height)
+    cx, cy = (x1 + x2) / 2, (y1 + y2) / 2
+    left = int(min(max(cx - side / 2, 0), width - side))
+    top = int(min(max(cy - side / 2, 0), height - side))
+    return left, top, left + side, top + side
+
+
+# ---------- answers ----------
+
+
+def save_answer(path: Path, item_id: str, label: str | None) -> None:
+    """Append one answer (None = taken back with Backspace)."""
+    if label is not None and label not in TYPES:
+        raise ValueError(f"Unknown type {label!r}")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    record = {"item": item_id, "label": label, "at": datetime.now(UTC).isoformat()}
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(record) + "\n")
+
+
+def load_answers(path: Path) -> dict[str, str]:
+    """item id -> its latest answer (items taken back and not answered again are left out)."""
+    answers: dict[str, str | None] = {}
+    if path.exists():
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                record = json.loads(line)
+                answers[record["item"]] = record["label"]
+    return {item: label for item, label in answers.items() if label is not None}
+
+
+def self_agreement(answers: dict[str, str]) -> dict:
+    """How often the hidden repeats got the same answer as the first time (+ Cohen's kappa,
+    which removes the agreement expected by chance)."""
+    pairs = [
+        (answers[item.removeprefix("repeat:")], label)
+        for item, label in answers.items()
+        if item.startswith("repeat:") and item.removeprefix("repeat:") in answers
+    ]
+    if not pairs:
+        return {"pairs": 0, "agreement": None, "kappa": None}
+    same = sum(a == b for a, b in pairs) / len(pairs)
+    first, second = Counter(a for a, _ in pairs), Counter(b for _, b in pairs)
+    chance = sum(first[t] * second[t] for t in TYPES) / len(pairs) ** 2
+    kappa = (same - chance) / (1 - chance) if chance < 1 else 1.0
+    return {"pairs": len(pairs), "agreement": round(same, 3), "kappa": round(kappa, 3)}

@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pimple Types</title>
+<style>
+  /* neutral grey: a white or coloured page changes how red a spot looks */
+  :root { --bg: #6e6e6e; --panel: #5f5f5f; --text: #f2f2f2; --muted: #d0d0d0; --accent: #00e6ff; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.4 "Segoe UI", Arial, sans-serif; }
+  main { max-width: 900px; margin: 0 auto; padding: 16px; }
+  header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  h1 { font-size: 20px; margin: 0; }
+  .bar { height: 8px; background: var(--panel); border-radius: 4px; margin: 10px 0 14px; overflow: hidden; }
+  .bar div { height: 100%; background: var(--accent); width: 0; }
+  .pictures { display: flex; gap: 12px; flex-wrap: wrap; }
+  figure { margin: 0; flex: 1 1 300px; }
+  figure img { width: 100%; aspect-ratio: 1; display: block; background: var(--panel); border-radius: 6px; }
+  figcaption { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .keys { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; margin: 14px 0; }
+  button { background: var(--panel); color: var(--text); border: 2px solid transparent; border-radius: 6px;
+           padding: 8px 10px; text-align: left; cursor: pointer; font: inherit; }
+  button:hover, button:focus-visible { border-color: var(--accent); outline: none; }
+  button b { font-size: 16px; }
+  button small { display: block; color: var(--muted); font-size: 12.5px; }
+  .meta { color: var(--muted); font-size: 13px; display: flex; gap: 16px; flex-wrap: wrap; }
+  .done { text-align: center; padding: 60px 0; font-size: 18px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Pimple types</h1>
+    <span id="progress"></span>
+  </header>
+  <div class="bar"><div id="bar"></div></div>
+
+  <section id="work">
+    <div class="pictures">
+      <figure><img id="close" alt="Close-up of the circled spot"><figcaption>Close-up (no marks)</figcaption></figure>
+      <figure><img id="context" alt="The spot in its part of the face, circled"><figcaption>Around it (the spot is circled)</figcaption></figure>
+    </div>
+    <div class="keys">
+      <button data-label="whitehead"><b>1 Whitehead</b><small>Small closed bump, skin-coloured or white, not red</small></button>
+      <button data-label="papule"><b>2 Papule</b><small>Small red bump, no white / yellow centre</small></button>
+      <button data-label="pustule"><b>3 Pustule</b><small>Red base with a white / yellow centre</small></button>
+      <button data-label="other"><b>4 Other</b><small>Blackhead, large deep lump, mark or scar</small></button>
+      <button data-label="unclear"><b>5 Not a pimple / can't tell</b><small>Blurry, hair, freckle, nothing there</small></button>
+    </div>
+    <div class="meta">
+      <span>Backspace = back one</span>
+      <span id="split"></span>
+    </div>
+  </section>
+  <section id="finished" class="done" hidden>Round finished, thank you. You can close this page.</section>
+  <p class="meta" id="counts"></p>
+</main>
+<script>
+  const KEYS = { "1": "whitehead", "2": "papule", "3": "pustule", "4": "other", "5": "unclear" };
+  let current = null;
+  let busy = false;
+
+  function show(state) {
+    current = state.item;
+    const done = state.position;
+    document.getElementById("progress").textContent = `${done} / ${state.total}`;
+    document.getElementById("bar").style.width = `${(100 * done / state.total).toFixed(1)}%`;
+    const c = state.counts;
+    let text = `Whitehead ${c.whitehead} · Papule ${c.papule} · Pustule ${c.pustule} · Other ${c.other} · Unclear ${c.unclear}`;
+    if (state.agreement.pairs) {
+      text += ` · Self-agreement ${(100 * state.agreement.agreement).toFixed(0)}% on ${state.agreement.pairs} repeats`;
+    }
+    document.getElementById("counts").textContent = text;
+    document.getElementById("work").hidden = !current;
+    document.getElementById("finished").hidden = !!current;
+    if (current) {
+      const id = encodeURIComponent(current.id);
+      document.getElementById("close").src = `/picture/close/${id}`;
+      document.getElementById("context").src = `/picture/context/${id}`;
+      document.getElementById("split").textContent = `Photo set: ${current.split}`;
+    }
+  }
+
+  async function call(path, body) {
+    if (busy) return;
+    busy = true;
+    try {
+      const response = await fetch(path, body === undefined ? {} : {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+      });
+      show(await response.json());
+    } catch (error) {
+      alert("The labelling server is not answering. Is it still running?");
+    } finally {
+      busy = false;
+    }
+  }
+
+  const answer = (label) => current && call("/api/answer", { item: current.id, label });
+
+  document.querySelectorAll("button[data-label]").forEach((b) =>
+    b.addEventListener("click", () => answer(b.dataset.label)));
+  document.addEventListener("keydown", (event) => {
+    if (KEYS[event.key]) { event.preventDefault(); answer(KEYS[event.key]); }
+    if (event.key === "Backspace") { event.preventDefault(); call("/api/back", {}); }
+  });
+  call("/api/state");
+</script>
+</body>
+</html>
