@@ -172,3 +172,29 @@ expected view (0 exceptions on 131 masks), which confirms the region mapping.
    corrections and lesion types were labelled by non-experts.
 6. Wrinkle masks: check a sample (~50) first; fix only if systematic gaps are found (brush tool, e.g.
    Label Studio, decided in Step 4). MEMI front-view cheeks may optionally be annotated the same way.
+
+## Lesion types (Phase 3 Step 3, labelled by the student)
+
+**Design (decided 2026-11-01):** two stages. YOLO learns to FIND pimples from all the expert circles
+of `pimples.json` (1,167 photos, no new labels); a small classifier learns the TYPE of each found
+pimple from close-ups labelled by the student (`skincare_ml/lesion_types.py`, page
+`scripts/label_types.py`, local only). Answers: whitehead, papule, pustule, other, unclear.
+Papule + pustule = inflamed lesions, counted for the Hayashi grade (Step 1: counting every circle
+agreed with the expert grade on 31% of photos). Labelled by a non-expert (stated in the report).
+
+**Round 1 (2026-11-01):** 600 close-ups (89 test, 91 val, 420 train; max 3 circles per photo,
+circles < 10 px skipped) + 60 hidden repeats, answered in 39 minutes (median 1.5 s per answer).
+whitehead 299 (50%), papule 206 (34%), pustule 68 (11%), other 12, unclear 15. Papules dominate on
+severe / very severe photos, as expected. **Self-agreement on the 60 repeats: 71.7%, Cohen's kappa
+0.54 (moderate)**; most changes were whitehead <-> papule (8) and pustule -> papule / whitehead (6:
+pustules kept their answer 5 times out of 11).
+
+**Test labels frozen** (`prepared/lesion_types/test_labels_frozen.json`, the student's choice:
+as labelled once, no second pass): 89 labels (whitehead 34, papule 34, pustule 12, other 2,
+unclear 7), SHA-256 `70d4051325ec8697f68fb65717f1cb49e91faade82a394a0e6140cfb32a29db5`;
+`python scripts/freeze_test_labels.py --check` proves they never changed. Later rounds refuse test
+close-ups.
+
+**Round 2:** 600 training close-ups only, moderate / severe photos favoured (weights 1 / 2 / 4 / 4)
+to find more pustules (mild 143, moderate 323, severe 120, very severe 14) + 60 repeats; the page
+accepts an answer only after the pictures were shown for 2 seconds.

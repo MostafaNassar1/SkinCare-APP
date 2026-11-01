@@ -205,3 +205,80 @@ def test_close_up_has_no_marks_and_face_keeps_the_photo_shape(labelling):
 def test_module_documents_every_type():
     for name in lesion_types.TYPES:
         assert f"- {name}:" in lesion_types.__doc__
+
+
+# ---------- round 2: training photos, more severe faces ----------
+
+
+def test_round_can_take_training_photos_only_and_favour_severe_faces():
+    photos = [image(f"mild{i}", "train", 3, grade="mild") for i in range(50)]
+    photos += [image(f"severe{i}", "train", 3, grade="severe") for i in range(50)]
+    photos += [image(f"test{i}", "test", 3) for i in range(20)]
+
+    plain = make_queue(photos, 60, seed=3, splits=["train"])
+    weighted = make_queue(photos, 60, seed=3, splits=["train"],
+                          grade_weights={"mild": 1.0, "severe": 4.0})  # fmt: skip
+
+    assert {item.split for item in weighted} == {"train"}
+    severe = [sum(i.grade == "severe" for i in q if not i.is_repeat) for q in (plain, weighted)]
+    assert severe[1] > severe[0] and severe[1] >= 45  # mostly severe faces once weighted
+
+
+# ---------- frozen test labels ----------
+
+
+def test_frozen_record_keeps_only_test_answers_with_a_fingerprint():
+    items = [{"id": "a#0", "split": "test"}, {"id": "repeat:a#0", "split": "test"},
+             {"id": "b#0", "split": "train"}, {"id": "c#0", "split": "test"}]  # fmt: skip
+    answers = {"a#0": "papule", "repeat:a#0": "whitehead", "b#0": "pustule"}
+
+    record = lesion_types.frozen_test_record(items, answers)
+
+    assert record["labels"] == {"a#0": "papule"}  # first answer, test only, answered only
+    assert record["sha256"] == lesion_types.fingerprint({"a#0": "papule"})
+    assert lesion_types.fingerprint({"a#0": "pustule"}) != record["sha256"]
+
+
+@pytest.fixture
+def scripts(monkeypatch, tmp_path):
+    monkeypatch.setenv("SKINCARE_DATA_DIR", str(tmp_path))
+    monkeypatch.syspath_prepend(str(SCRIPTS))
+    for name in ("freeze_test_labels", "make_label_queue"):
+        sys.modules.pop(name, None)
+    import freeze_test_labels
+    import make_label_queue
+
+    folder = tmp_path / "prepared" / "lesion_types"
+    folder.mkdir(parents=True)
+    (folder / "round1_queue.json").write_text(json.dumps({"round": 1, "items": [
+        {"id": "a#0", "split": "test"}, {"id": "b#0", "split": "train"}]}))
+    save_answer(folder / "round1_answers.jsonl", "a#0", "papule")
+    save_answer(folder / "round1_answers.jsonl", "b#0", "pustule")
+    return freeze_test_labels, make_label_queue, folder
+
+
+def test_freeze_once_then_check(scripts, capsys):
+    freeze, _, folder = scripts
+
+    assert freeze.main(["--round", "1"]) == 0
+    assert freeze.main(["--round", "1"]) == 1  # frozen once
+    assert freeze.main(["--check"]) == 0
+
+    target = folder / "test_labels_frozen.json"
+    record = json.loads(target.read_text())
+    record["labels"]["a#0"] = "pustule"  # edited after freezing
+    target.write_text(json.dumps(record))
+    assert freeze.main(["--check"]) == 1
+    assert "CHANGED" in capsys.readouterr().err
+
+
+def test_no_new_test_close_ups_once_frozen(scripts):
+    freeze, make, _ = scripts
+    freeze.main(["--round", "1"])
+
+    assert make.main(["--round", "2"]) == 1  # default splits include test
+    assert make.main(["--round", "2", "--splits", "val", "train", "--favour-severe"]) == 1
+
+
+def test_page_state_tells_the_minimum_viewing_time(monkeypatch, tmp_path, labelling):
+    assert labelling.state()["min_seconds"] == 2.0

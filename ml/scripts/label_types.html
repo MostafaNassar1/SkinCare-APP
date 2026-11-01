@@ -25,6 +25,7 @@
   button:hover, button:focus-visible { border-color: var(--accent); outline: none; }
   button b { font-size: 16px; }
   button small { display: block; color: var(--muted); font-size: 12.5px; }
+  .keys.waiting button { opacity: 0.45; cursor: wait; }
   .meta { color: var(--muted); font-size: 13px; display: flex; gap: 16px; flex-wrap: wrap; }
   .done { text-align: center; padding: 60px 0; font-size: 18px; }
 </style>
@@ -62,6 +63,21 @@
   const KEYS = { "1": "whitehead", "2": "papule", "3": "pustule", "4": "other", "5": "unclear" };
   let current = null;
   let busy = false;
+  let ready = false;  // the keys work only after the pictures were shown for min_seconds
+  let timer = null;
+
+  function waitThenAllow(seconds) {
+    ready = false;
+    clearTimeout(timer);
+    const keys = document.querySelector(".keys");
+    keys.classList.add("waiting");
+    const pictures = ["close", "context", "face"].map((id) => document.getElementById(id));
+    const loaded = pictures.map((img) => img.complete ? Promise.resolve()
+      : new Promise((done) => { img.onload = done; img.onerror = done; }));
+    Promise.all(loaded).then(() => {
+      timer = setTimeout(() => { ready = true; keys.classList.remove("waiting"); }, seconds * 1000);
+    });
+  }
 
   function show(state) {
     current = state.item;
@@ -82,6 +98,7 @@
       document.getElementById("context").src = `/picture/context/${id}`;
       document.getElementById("face").src = `/picture/face/${id}`;
       document.getElementById("split").textContent = `Photo set: ${current.split}`;
+      waitThenAllow(state.min_seconds);
     }
   }
 
@@ -100,7 +117,7 @@
     }
   }
 
-  const answer = (label) => current && call("/api/answer", { item: current.id, label });
+  const answer = (label) => current && ready && call("/api/answer", { item: current.id, label });
 
   document.querySelectorAll("button[data-label]").forEach((b) =>
     b.addEventListener("click", () => answer(b.dataset.label)));

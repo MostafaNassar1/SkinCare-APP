@@ -3,7 +3,9 @@ r"""Local page to type the expert acne circles of a round, one close-up at a tim
     cd ml; .venv\Scripts\activate; $env:PYTHONPATH = "."
     python scripts/label_types.py --round 1        # then open http://127.0.0.1:8765
 
-Keys: 1 whitehead, 2 papule, 3 pustule, 4 other, 5 unclear, Backspace = back one. Every answer is
+Keys: 1 whitehead, 2 papule, 3 pustule, 4 other, 5 unclear, Backspace = back one. The keys work
+only after the pictures have been shown for --min-seconds (default 2: round 1's median of 1.5 s per
+answer gave 72% self-agreement; colour and a white centre need a closer look). Every answer is
 appended at once to round<N>_answers.jsonl (closing the page loses nothing; reopening continues
 where you stopped). Only this laptop can open the page (127.0.0.1). Photos never leave it.
 """
@@ -40,7 +42,8 @@ OTHER_RING = ((215, 215, 215), 1)  # the photo's other expert circles: thin ligh
 
 
 class Round:
-    def __init__(self, number: int):
+    def __init__(self, number: int, min_seconds: float = 2.0):
+        self.min_seconds = min_seconds
         folder = config.prepared_dir() / "lesion_types"
         queue = json.loads((folder / f"round{number}_queue.json").read_text(encoding="utf-8"))
         self.items = queue["items"]
@@ -71,6 +74,7 @@ class Round:
             "counts": counts,
             "inflamed": sum(counts[t] for t in INFLAMED),
             "agreement": self_agreement(answers),
+            "min_seconds": self.min_seconds,
         }
 
     def take_back(self) -> None:
@@ -188,9 +192,11 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Label the type of each acne circle.")
     parser.add_argument("--round", type=int, required=True)
     parser.add_argument("--port", type=int, default=8765)
+    parser.add_argument("--min-seconds", type=float, default=2.0,
+                        help="seconds the pictures are shown before the keys work")
     args = parser.parse_args(argv)
 
-    labelling = Round(args.round)
+    labelling = Round(args.round, args.min_seconds)
     server = ThreadingHTTPServer(("127.0.0.1", args.port), make_handler(labelling))
     url = f"http://127.0.0.1:{args.port}"
     print(f"Round {args.round}: {url}  (Ctrl+C to stop; answers are saved as you go)")

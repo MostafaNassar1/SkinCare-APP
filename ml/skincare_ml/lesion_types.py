@@ -20,6 +20,7 @@ repeats placed far after their first showing, to measure the labeller's self-con
 Answers are appended to a JSON-lines file (the last answer for an item wins), never rewritten.
 """
 
+import hashlib
 import json
 import random
 from collections import Counter
@@ -55,17 +56,28 @@ class Item:
 
 
 def make_queue(
-    images: list[dict], size: int, seed: int, skip: Iterable[str] = ()
+    images: list[dict],
+    size: int,
+    seed: int,
+    skip: Iterable[str] = (),
+    splits: Iterable[str] = SPLIT_ORDER,
+    grade_weights: dict[str, float] | None = None,
 ) -> list[Item]:
     """`size` new close-ups from the manifest's images (+ ~10% hidden repeats), test first.
 
     The share of each split follows the photos (about 70 / 15 / 15); circles already labelled in
-    earlier rounds (`skip`) are never picked again.
+    earlier rounds (`skip`) are never picked again. `splits` limits the photo sets (round 2: the
+    training photos only, the test labels being frozen); `grade_weights` makes photos of some expert
+    grades more likely (round 2: more moderate / severe photos, where pustules are common). Only
+    training data may be weighted, so the test set keeps the real mix.
     """
     rng = random.Random(seed)
     skip = set(skip)
-    by_split: dict[str, list[Item]] = {split: [] for split in SPLIT_ORDER}
+    splits = tuple(s for s in SPLIT_ORDER if s in set(splits))
+    by_split: dict[str, list[Item]] = {split: [] for split in splits}
     for image in images:
+        if image["split"] not in by_split:
+            continue
         candidates = [
             Item(f"{image['file']}#{index}", image["file"], tuple(b["box"]), image["split"],
                  image["expert_grade"])
@@ -78,9 +90,13 @@ def make_queue(
 
     total = sum(len(items) for items in by_split.values())
     picked: list[Item] = []
-    for split in SPLIT_ORDER:
+    for split in splits:
         pool = by_split[split]
         rng.shuffle(pool)
+        if grade_weights:
+            # weighted order without replacement (Efraimidis-Spirakis): key = u ** (1 / weight)
+            keys = {id(i): rng.random() ** (1 / grade_weights.get(i.grade, 1.0)) for i in pool}
+            pool.sort(key=lambda i: keys[id(i)], reverse=True)
         share = round(size * len(pool) / total) if total else 0
         chosen = pool[:share]
         chosen.sort(key=lambda item: item.file)  # same photo together: faster to load
@@ -157,3 +173,23 @@ def self_agreement(answers: dict[str, str]) -> dict:
     chance = sum(first[t] * second[t] for t in TYPES) / len(pairs) ** 2
     kappa = (same - chance) / (1 - chance) if chance < 1 else 1.0
     return {"pairs": len(pairs), "agreement": round(same, 3), "kappa": round(kappa, 3)}
+
+
+# ---------- frozen test labels ----------
+
+
+def frozen_test_record(queue_items: list[dict], answers: dict[str, str]) -> dict:
+    """The test-set answers of a round, with a SHA-256 fingerprint: frozen before any training
+    and never edited after seeing model results (correction rule 4, ml/DATASETS.md)."""
+    labels = {
+        item["id"]: answers[item["id"]]
+        for item in queue_items
+        if item["split"] == "test" and not item["id"].startswith("repeat:")
+        and item["id"] in answers
+    }  # fmt: skip
+    return {"labels": labels, "sha256": fingerprint(labels)}
+
+
+def fingerprint(labels: dict[str, str]) -> str:
+    text = json.dumps(labels, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
