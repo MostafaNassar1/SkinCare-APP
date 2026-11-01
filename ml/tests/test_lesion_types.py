@@ -281,4 +281,4 @@ def test_no_new_test_close_ups_once_frozen(scripts):
 
 
 def test_page_state_tells_the_minimum_viewing_time(monkeypatch, tmp_path, labelling):
-    assert labelling.state()["min_seconds"] == 2.0
+    assert labelling.state()["min_seconds"] == 0.0  # no waiting unless asked for

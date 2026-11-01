@@ -67,6 +67,7 @@
   let timer = null;
 
   function waitThenAllow(seconds) {
+    if (!seconds) { ready = true; return; }  // no waiting (the default)
     ready = false;
     clearTimeout(timer);
     const keys = document.querySelector(".keys");

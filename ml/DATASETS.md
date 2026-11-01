@@ -196,5 +196,6 @@ unclear 7), SHA-256 `70d4051325ec8697f68fb65717f1cb49e91faade82a394a0e6140cfb32a
 close-ups.
 
 **Round 2:** 600 training close-ups only, moderate / severe photos favoured (weights 1 / 2 / 4 / 4)
-to find more pustules (mild 143, moderate 323, severe 120, very severe 14) + 60 repeats; the page
-accepts an answer only after the pictures were shown for 2 seconds.
+to find more pustules (mild 143, moderate 323, severe 120, very severe 14) + 60 repeats. A 2-second
+wait before answering was proposed (round 1's median was 1.5 s per answer) and declined by the
+student; the page keeps it as an option (`--min-seconds`), off by default.

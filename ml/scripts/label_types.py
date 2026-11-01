@@ -3,9 +3,9 @@ r"""Local page to type the expert acne circles of a round, one close-up at a tim
     cd ml; .venv\Scripts\activate; $env:PYTHONPATH = "."
     python scripts/label_types.py --round 1        # then open http://127.0.0.1:8765
 
-Keys: 1 whitehead, 2 papule, 3 pustule, 4 other, 5 unclear, Backspace = back one. The keys work
-only after the pictures have been shown for --min-seconds (default 2: round 1's median of 1.5 s per
-answer gave 72% self-agreement; colour and a white centre need a closer look). Every answer is
+Keys: 1 whitehead, 2 papule, 3 pustule, 4 other, 5 unclear, Backspace = back one. --min-seconds N
+makes the keys wait N seconds after the pictures appear (off by default: the student's choice,
+2026-11-01). Every answer is
 appended at once to round<N>_answers.jsonl (closing the page loses nothing; reopening continues
 where you stopped). Only this laptop can open the page (127.0.0.1). Photos never leave it.
 """
@@ -42,7 +42,7 @@ OTHER_RING = ((215, 215, 215), 1)  # the photo's other expert circles: thin ligh
 
 
 class Round:
-    def __init__(self, number: int, min_seconds: float = 2.0):
+    def __init__(self, number: int, min_seconds: float = 0.0):
         self.min_seconds = min_seconds
         folder = config.prepared_dir() / "lesion_types"
         queue = json.loads((folder / f"round{number}_queue.json").read_text(encoding="utf-8"))
@@ -192,8 +192,8 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Label the type of each acne circle.")
     parser.add_argument("--round", type=int, required=True)
     parser.add_argument("--port", type=int, default=8765)
-    parser.add_argument("--min-seconds", type=float, default=2.0,
-                        help="seconds the pictures are shown before the keys work")
+    parser.add_argument("--min-seconds", type=float, default=0.0,
+                        help="seconds the pictures are shown before the keys work (default: none)")
     args = parser.parse_args(argv)
 
     labelling = Round(args.round, args.min_seconds)
