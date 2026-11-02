@@ -35,8 +35,8 @@ def main() -> int:
     queues, answers = [], {}
     for queue_file in sorted(folder.glob("round*_queue.json")):
         queues.append(json.loads(queue_file.read_text(encoding="utf-8"))["items"])
-        answers_file = queue_file.with_name(queue_file.name.replace("_queue.json", "_answers.jsonl"))
-        answers |= load_answers(answers_file)
+        answers_name = queue_file.name.replace("_queue.json", "_answers.jsonl")
+        answers |= load_answers(queue_file.with_name(answers_name))
     examples = labelled_examples(queues, answers)
     train_items = [e for e in examples if e["split"] == "train"]
     val_items = [e for e in examples if e["split"] == "val"]

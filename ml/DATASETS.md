@@ -199,3 +199,19 @@ close-ups.
 to find more pustules (mild 143, moderate 323, severe 120, very severe 14) + 60 repeats. A 2-second
 wait before answering was proposed (round 1's median was 1.5 s per answer) and declined by the
 student; the page keeps it as an option (`--min-seconds`), off by default.
+
+**Round 2 results (2026-11-01):** 600 + 60 repeats in 17 minutes (median 1.2 s): whitehead 314,
+papule 207, pustule 74, other 4, unclear 1. **Self-agreement 90.0%, kappa 0.82** (up from 0.54:
+the student's consistency improved with practice, not with a slower pace).
+
+**Scout for round 3 (active learning, 2026-11-02):** pustules stayed ~12% of answers, so a quick
+type model (`skincare_ml/type_model.py`, `scripts/train_scout.py`; MobileNetV3-small,
+ImageNet-pretrained, CPU, 6 minutes) learned from rounds 1-2 (984 training close-ups: whitehead 531,
+papule 344, pustule 109; circles answered differently on their repeat left out) and was checked on
+84 validation close-ups: **balanced accuracy 0.62** (chance 0.33); recall whitehead 0.77, papule
+0.63, pustule 0.45 (5 of 11). Of the validation spots it called "pustule", 38% were (vs ~12% at
+random): about 3x enrichment, which is its only job. It scored the 21,228 untyped training circles;
+round 3 = 400 of them (70% likeliest pustules, 30% least sure, shuffled, max 3 per photo; the scout
+called 306 of them pustules) + 40 repeats. The scout is thrown away; the frozen test labels were
+never used. Training data chosen this way over-represents pustule-looking spots (fine for training;
+the test set keeps the real mix).

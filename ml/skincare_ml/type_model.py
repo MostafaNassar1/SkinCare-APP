@@ -140,7 +140,7 @@ def evaluate(labels: list[int], probabilities: np.ndarray) -> dict:
     for truth, guess in zip(labels, predicted, strict=True):
         confusion[truth, guess] += 1
     recall = {
-        name: (round(confusion[i, i] / confusion[i].sum(), 3) if confusion[i].sum() else None)
+        name: round(float(confusion[i, i] / confusion[i].sum()), 3) if confusion[i].sum() else None
         for i, name in enumerate(LEARNED)
     }
     present = [r for r in recall.values() if r is not None]
