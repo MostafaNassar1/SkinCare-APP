@@ -4,5 +4,11 @@ pillow==13.0.0
 # test photos; OpenCV 4.14 finds them (checked 2026-10-25)
 opencv-python-headless==4.14.0.94
 
+# PyTorch (BSD): the lesion-type model. This laptop uses the CPU build, installed with
+#   pip install torch==2.15.0 torchvision==0.29.2 --index-url https://download.pytorch.org/whl/cpu
+# the GPU laptop installs the CUDA build of the same versions (see pytorch.org)
+torch==2.15.0
+torchvision==0.29.2
+
 # Testing
 pytest==9.1.1

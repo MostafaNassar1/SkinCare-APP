@@ -282,3 +282,39 @@ def test_no_new_test_close_ups_once_frozen(scripts):
 
 def test_page_state_tells_the_minimum_viewing_time(monkeypatch, tmp_path, labelling):
     assert labelling.state()["min_seconds"] == 0.0  # no waiting unless asked for
+
+
+# ---------- what the scout learns from, and how it picks round 3 ----------
+
+
+def test_examples_skip_test_uncertain_and_rare_answers():
+    queue = [{"id": f"p#{n}", "split": "train"} for n in range(6)]
+    queue += [{"id": "t#0", "split": "test"}, {"id": "repeat:p#0", "split": "train"}]
+    answers = {"p#0": "papule", "repeat:p#0": "whitehead",  # changed on its repeat: uncertain
+               "p#1": "pustule", "p#2": "other", "p#3": "unclear", "p#4": "whitehead",
+               "t#0": "pustule"}  # fmt: skip
+
+    examples = lesion_types.labelled_examples([queue], answers)
+
+    assert [(e["id"], e["label"]) for e in examples] == [("p#1", "pustule"), ("p#4", "whitehead")]
+
+
+def test_scout_queue_takes_likely_pustules_then_unsure_circles():
+    candidates = [
+        {"id": f"f{n // 5}#{n % 5}", "file": f"f{n // 5}", "box": [0, 0, 20, 20], "split": "train",
+         "grade": "moderate", "pustule": n / 100, "margin": abs(50 - n) / 100}
+        for n in range(100)
+    ]  # fmt: skip
+
+    queue = lesion_types.scout_queue(candidates, 10, seed=1)
+
+    new = [item for item in queue if not item.is_repeat]
+    assert len(new) == 10
+    assert Counter(item.file for item in new).most_common(1)[0][1] <= MAX_PER_PHOTO
+    by_id = {c["id"]: c for c in candidates}
+    likely = sorted((by_id[item.id] for item in new), key=lambda c: -c["pustule"])[:7]
+    # 3 from f19 (0.99-0.97), 3 from f18 (0.94-0.92), then f17's best: the per-photo limit skips
+    # f19's and f18's remaining circles
+    assert [c["pustule"] for c in likely] == [0.99, 0.98, 0.97, 0.94, 0.93, 0.92, 0.89]
+    unsure = [by_id[item.id] for item in new if by_id[item.id] not in likely]
+    assert max(c["margin"] for c in unsure) <= 0.05  # the 3 least sure ones

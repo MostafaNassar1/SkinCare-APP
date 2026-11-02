@@ -3,6 +3,7 @@ r"""Make the to-do list of a labelling round (close-ups of expert acne circles t
     cd ml; .venv\Scripts\activate; $env:PYTHONPATH = "."
     python scripts/make_label_queue.py --round 1 --size 600
     python scripts/make_label_queue.py --round 2 --size 600 --splits train --favour-severe
+    python scripts/make_label_queue.py --round 3 --size 400 --from-scout   # after train_scout.py
 
 Writes C:\SkinCareData\prepared\lesion_types\round<N>_queue.json (never overwrites a round).
 Circles answered in earlier rounds are never picked again. See skincare_ml/lesion_types.py.
@@ -14,7 +15,7 @@ import sys
 from collections import Counter
 
 from skincare_ml import config
-from skincare_ml.lesion_types import SPLIT_ORDER, load_answers, make_queue
+from skincare_ml.lesion_types import SPLIT_ORDER, load_answers, make_queue, scout_queue
 
 # round 2 (2026-11-01): pustules were only 11% of round 1, and are more common on moderate /
 # severe faces; only TRAINING photos are weighted, so the test set keeps the real mix
@@ -32,7 +33,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--splits", nargs="+", choices=SPLIT_ORDER, default=list(SPLIT_ORDER))
     parser.add_argument("--favour-severe", action="store_true",
                         help="pick moderate / severe photos more often (training only)")
+    parser.add_argument("--from-scout", action="store_true",
+                        help="choose with the scout's scores (likely pustules + unsure circles)")
     args = parser.parse_args(argv)
+    if args.from_scout:
+        args.splits = ["train"]  # the scout only scores training circles
     if "test" in args.splits and (rounds_dir() / "test_labels_frozen.json").exists():
         print("The test labels are frozen: no new test close-ups (use --splits val train)",
               file=sys.stderr)
@@ -53,10 +58,19 @@ def main(argv: list[str] | None = None) -> int:
     manifest = json.loads(
         (config.prepared_dir() / "manifests" / "pimples.json").read_text(encoding="utf-8")
     )
-    queue = make_queue(
-        manifest["images"], args.size, seed=2026 + args.round, skip=done, splits=args.splits,
-        grade_weights=FAVOUR_SEVERE if args.favour_severe else None,
-    )
+    if args.from_scout:
+        scores = folder / "scout_scores.json"
+        if not scores.exists():
+            print("Run scripts/train_scout.py first", file=sys.stderr)
+            return 1
+        candidates = [c for c in json.loads(scores.read_text(encoding="utf-8"))
+                      if c["id"] not in done]  # fmt: skip
+        queue = scout_queue(candidates, args.size, seed=2026 + args.round)
+    else:
+        queue = make_queue(
+            manifest["images"], args.size, seed=2026 + args.round, skip=done, splits=args.splits,
+            grade_weights=FAVOUR_SEVERE if args.favour_severe else None,
+        )
     folder.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps({
         "round": args.round,

@@ -193,3 +193,53 @@ def frozen_test_record(queue_items: list[dict], answers: dict[str, str]) -> dict
 def fingerprint(labels: dict[str, str]) -> str:
     text = json.dumps(labels, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+# ---------- learning from the answers (the scout, then the real type model) ----------
+
+LEARNED = ("whitehead", "papule", "pustule")  # other / unclear: too few to learn
+
+
+def labelled_examples(queues: list[list[dict]], answers: dict[str, str]) -> list[dict]:
+    """Every answered circle the type model can learn from: one of LEARNED, and the same answer on
+    its hidden repeat when it had one (a circle the labeller answered differently is uncertain
+    even to them, so it is left out). Test photos are never included (frozen labels)."""
+    examples = []
+    for queue in queues:
+        for item in queue:
+            label = answers.get(item["id"])
+            if item["id"].startswith("repeat:") or item["split"] == "test" or label not in LEARNED:
+                continue
+            repeat = answers.get(f"repeat:{item['id']}")
+            if repeat is not None and repeat != label:
+                continue
+            examples.append({**item, "label": label})
+    return examples
+
+
+def scout_queue(
+    candidates: list[dict], size: int, seed: int, pustule_share: float = 0.7
+) -> list[Item]:
+    """Round 3: `size` close-ups chosen by the scout's scores (candidates = unlabelled training
+    circles with "pustule" = its probability and "margin" = top-1 minus top-2 probability):
+    `pustule_share` the likeliest pustules, the rest the circles it is least sure about; at most
+    MAX_PER_PHOTO per photo; + ~10% hidden repeats. The order is shuffled so the labeller cannot
+    tell which close-ups the scout thought were pustules."""
+    rng = random.Random(seed)
+    per_photo: Counter = Counter()
+    chosen: list[dict] = []
+
+    def take(ranked: list[dict], count: int) -> None:
+        for candidate in ranked:
+            if len(chosen) >= count:
+                return
+            if candidate in chosen or per_photo[candidate["file"]] >= MAX_PER_PHOTO:
+                continue
+            chosen.append(candidate)
+            per_photo[candidate["file"]] += 1
+
+    take(sorted(candidates, key=lambda c: -c["pustule"]), round(size * pustule_share))
+    take(sorted(candidates, key=lambda c: c["margin"]), size)
+    rng.shuffle(chosen)
+    items = [Item(c["id"], c["file"], tuple(c["box"]), c["split"], c["grade"]) for c in chosen]
+    return _add_repeats(items, rng)
