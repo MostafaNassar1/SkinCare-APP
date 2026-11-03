@@ -17,6 +17,7 @@ Runs are saved in C:\SkinCareData\prepared\yolo_runs\ (never in the repository).
 """
 
 import argparse
+import os
 import sys
 
 from skincare_ml import config
@@ -54,6 +55,24 @@ def data_yaml() -> str:
     return str(target)
 
 
+def starting_weights(name: str):
+    """The pretrained starting weights, kept in C:/SkinCareData/models (Ultralytics downloads
+    them into the current folder, which would be inside the repository)."""
+    folder = config.data_dir() / "models"
+    folder.mkdir(parents=True, exist_ok=True)
+    target = folder / name
+    if not target.exists():
+        from ultralytics.utils.downloads import attempt_download_asset
+
+        here = os.getcwd()
+        os.chdir(folder)  # the download lands in the current folder
+        try:
+            attempt_download_asset(name)
+        finally:
+            os.chdir(here)
+    return target
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Train the YOLO pimple finder.")
     parser.add_argument("--model", default="yolo11s.pt")
@@ -61,10 +80,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--name", default=None, help="run name (default: pimples or smoke)")
     args = parser.parse_args(argv)
 
+    # never let Ultralytics pip-install missing packages at runtime: it would pull opencv-python
+    # (possibly OpenCV 5, which breaks YuNet); only the pinned requirements are used
+    os.environ.setdefault("YOLO_AUTOINSTALL", "false")
     from ultralytics import YOLO  # heavy import: only when training
 
     settings = SETTINGS | (SMOKE if args.smoke else {})
-    model = YOLO(args.model)
+    model = YOLO(str(starting_weights(args.model)))
     model.train(
         data=data_yaml(),
         project=str(config.prepared_dir() / "yolo_runs"),
