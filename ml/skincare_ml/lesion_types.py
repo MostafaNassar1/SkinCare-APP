@@ -208,7 +208,8 @@ def labelled_examples(queues: list[list[dict]], answers: dict[str, str]) -> list
     for queue in queues:
         for item in queue:
             label = answers.get(item["id"])
-            if item["id"].startswith(("repeat:", "recheck:")) or item["split"] == "test"                     or label not in LEARNED:
+            skipped = item["id"].startswith(("repeat:", "recheck:")) or item["split"] == "test"
+            if skipped or label not in LEARNED:
                 continue
             repeat = answers.get(f"repeat:{item['id']}")
             if repeat is not None and repeat != label:
@@ -270,7 +271,9 @@ def drift_report(earlier: dict[str, str], recheck: dict[str, str]) -> dict:
     """For each earlier answer, what the recheck said; and how often "pustule" was given."""
     pairs = [(earlier[k.removeprefix("recheck:")], v) for k, v in recheck.items()
              if k.startswith("recheck:") and k.removeprefix("recheck:") in earlier]  # fmt: skip
-    table = {before: dict(Counter(after for b, after in pairs if b == before)) for before in LEARNED}
+    table = {
+        before: dict(Counter(after for b, after in pairs if b == before)) for before in LEARNED
+    }
     return {
         "pairs": len(pairs),
         "same": round(sum(a == b for a, b in pairs) / len(pairs), 3) if pairs else None,
