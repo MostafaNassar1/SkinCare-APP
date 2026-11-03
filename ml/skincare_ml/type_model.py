@@ -28,7 +28,14 @@ from torchvision import transforms
 from skincare_ml.lesion_types import LEARNED, crop_square
 
 CLOSE_UP = (3.0, 64)  # as on the labelling page
-SIZE = 96
+SIZE = 96  # the close-up is shrunk to SIZE x SIZE px (variant "160px" tries a sharper 160)
+# the network: MobileNetV3-small by default (variant "large" tries MobileNetV3-large)
+ARCHITECTURES = {
+    "small": (torchvision.models.mobilenet_v3_small,
+              torchvision.models.MobileNet_V3_Small_Weights.IMAGENET1K_V1),
+    "large": (torchvision.models.mobilenet_v3_large,
+              torchvision.models.MobileNet_V3_Large_Weights.IMAGENET1K_V2),
+}  # fmt: skip
 IMAGENET_MEAN, IMAGENET_STD = (0.485, 0.456, 0.406), (0.229, 0.224, 0.225)
 
 TRAIN_TRANSFORM = transforms.Compose([
@@ -44,12 +51,14 @@ EVAL_TRANSFORM = transforms.Compose([
 ])  # fmt: skip
 
 
-def close_up(photo: Image.Image, box) -> Image.Image:
+def close_up(photo: Image.Image, box, size: int = SIZE) -> Image.Image:
     area = crop_square(tuple(box), photo.width, photo.height, *CLOSE_UP)
-    return photo.crop(area).resize((SIZE, SIZE), Image.LANCZOS)
+    return photo.crop(area).resize((size, size), Image.LANCZOS)
 
 
-def load_close_ups(items: list[dict], sources: Path, progress=None) -> list[Image.Image]:
+def load_close_ups(
+    items: list[dict], sources: Path, progress=None, size: int = SIZE
+) -> list[Image.Image]:
     """The close-up of every item, opening each photo only once (photos are 3-5,000 px)."""
     by_file: dict[str, list[int]] = defaultdict(list)
     for index, item in enumerate(items):
@@ -59,15 +68,15 @@ def load_close_ups(items: list[dict], sources: Path, progress=None) -> list[Imag
         with Image.open(sources / file) as photo:
             photo = photo.convert("RGB")
             for index in indexes:
-                crops[index] = close_up(photo, items[index]["box"])
+                crops[index] = close_up(photo, items[index]["box"], size)
         if progress and done % 100 == 0:
             progress(f"  {done} / {len(by_file)} photos")
     return crops
 
 
-def build_model(pretrained: bool = True) -> nn.Module:
-    weights = torchvision.models.MobileNet_V3_Small_Weights.IMAGENET1K_V1 if pretrained else None
-    model = torchvision.models.mobilenet_v3_small(weights=weights)
+def build_model(pretrained: bool = True, architecture: str = "small") -> nn.Module:
+    make, weights = ARCHITECTURES[architecture]
+    model = make(weights=weights if pretrained else None)
     model.classifier[3] = nn.Linear(model.classifier[3].in_features, len(LEARNED))
     return model
 

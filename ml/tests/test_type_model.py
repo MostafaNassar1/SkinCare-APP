@@ -49,3 +49,18 @@ def test_evaluate_counts_recall_per_type():
     assert scores["recall"] == {"whitehead": 1.0, "papule": 0.5, "pustule": 1.0}
     assert scores["balanced_accuracy"] == pytest.approx(0.833, abs=0.001)
     assert scores["confusion"] == [[1, 0, 0], [1, 1, 0], [0, 0, 1]]
+
+
+@pytest.mark.parametrize("architecture", ["small", "large"])
+def test_both_networks_give_three_outputs(architecture):
+    model = type_model.build_model(pretrained=False, architecture=architecture)
+
+    probabilities = type_model.predict(model, [Image.new("RGB", (160, 160), (200, 90, 90))])
+
+    assert probabilities.shape == (1, len(LEARNED))
+
+
+def test_close_up_size_can_change():
+    photo = Image.new("RGB", (800, 600), (200, 150, 130))
+
+    assert type_model.close_up(photo, [100, 100, 150, 150], size=160).size == (160, 160)
