@@ -215,3 +215,26 @@ round 3 = 400 of them (70% likeliest pustules, 30% least sure, shuffled, max 3 p
 called 306 of them pustules) + 40 repeats. The scout is thrown away; the frozen test labels were
 never used. Training data chosen this way over-represents pustule-looking spots (fine for training;
 the test set keeps the real mix).
+
+**Round 3 results (2026-11-02):** 400 scout-chosen close-ups + 40 repeats in 13 minutes:
+pustule 161 (40%), papule 127, whitehead 99, other 13. Of the 306 the scout called pustules, the
+student said pustule for 152 (50%, ~4x random). Self-agreement 75.0%, kappa 0.60: lower than
+round 2 as expected, since round 3 is made of deliberately ambiguous spots (30% least-sure +
+papule/pustule boundary cases).
+
+**Round 4 (validation, random, 2026-11-03):** 300 close-ups from 161 validation photos + 30
+repeats in 9 minutes: whitehead 142, papule 89, pustule 63 (21%), other 6. Self-agreement 86.7%,
+kappa 0.78.
+
+**Drift check (round 5, 2026-11-03):** round 4's 21% pustules (random) against 11-13% in round 1
+(random) raised the question of a looser "pustule" standard after the pustule-heavy round 3. 60
+round-1 training close-ups (20 per type) were shown again blind: pustules 20 then, **18 now**; only
+2 of 20 round-1 papules became pustules. No drift towards pustules (a slight move of 10 inflamed
+spots to "whitehead", within the usual red / not-red uncertainty; same answer 73%). Recheck
+answers are never used for training. Conclusion: labels final.
+
+**Final labels (rounds 1-4, 1,900 answers, ~80 minutes):** self-agreement over all 190 hidden
+repeats 80.5%, kappa 0.70. Usable for learning (circles answered differently on their repeat left
+out): **train** whitehead 626, papule 468, pustule 267 (1,361); **validation** whitehead 184,
+papule 118, pustule 72 (374); **test (frozen)** 89 (whitehead 34, papule 34, pustule 12, other 2,
+unclear 7).
