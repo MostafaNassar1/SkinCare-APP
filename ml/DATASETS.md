@@ -238,3 +238,21 @@ repeats 80.5%, kappa 0.70. Usable for learning (circles answered differently on 
 out): **train** whitehead 626, papule 468, pustule 267 (1,361); **validation** whitehead 184,
 papule 118, pustule 72 (374); **test (frozen)** 89 (whitehead 34, papule 34, pustule 12, other 2,
 unclear 7).
+
+## Missed-pimple check (Phase 3 Step 3, 2026-11-03)
+
+YOLO learns to find pimples from the expert circles, so a visible pimple without a circle teaches
+it "this is skin" and, on test photos, turns a correct find into a counted mistake. The student
+checked **50 test photos** (chosen once, spread like the test grades: 22 mild, 22 moderate, 5
+severe, 1 very severe) with every expert circle drawn (`scripts/check_missed.py`, local page) and
+added a circle on each clear miss (rule 1: only clear misses; expert circles never changed).
+11 minutes; 46 circles added, 5 taken back.
+
+**Result: 41 missed pimples on 50 photos (0.82 per photo, 19 photos with at least one) against
+1,290 expert circles: the experts missed about 3.1% of the pimples** (mild 6 / 257, moderate
+26 / 599, severe 9 / 379, very severe 0 / 55). The expert circles are reliable, so the 818
+training photos are not checked (3% missing labels is a small noise for YOLO). The 41 additions
+are frozen (`prepared/corrections/missed_pimples_frozen.json`, SHA-256
+`730c4cd7f683553761d15122921855d5b098e8bf197de0084df047c9420f81d3`) and join the expert circles of
+those 50 photos for YOLO's test; results are reported on the 50 checked photos and on all 174 test
+photos.

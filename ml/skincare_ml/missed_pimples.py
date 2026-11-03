@@ -11,6 +11,7 @@ The log is append-only JSON lines in prepared/corrections/missed_pimples.jsonl:
 current state (the latest action wins).
 """
 
+import hashlib
 import json
 import random
 import secrets
@@ -102,3 +103,15 @@ def summary(photos: list[dict], state: CheckState) -> dict:
         "expert_circles_on_them": experts,
         "missed_share": round(sum(added) / (experts + sum(added)), 3) if checked else None,
     }
+
+
+def frozen_record(photos: list[dict], state: CheckState) -> dict:
+    """The added circles of the checked photos, with a SHA-256 fingerprint: frozen before YOLO is
+    trained, like the test type labels (correction rule 4)."""
+    added = {
+        p["file"]: sorted(state.added.get(p["file"], {}).values(), key=lambda c: (c["x"], c["y"]))
+        for p in photos
+        if p["file"] in state.done
+    }
+    text = json.dumps(added, sort_keys=True, separators=(",", ":"))
+    return {"added": added, "sha256": hashlib.sha256(text.encode("utf-8")).hexdigest()}

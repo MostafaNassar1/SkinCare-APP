@@ -3,6 +3,7 @@ r"""Local page for the missed-pimple check: whole test photos with every expert 
     cd ml; .venv\Scripts\activate; $env:PYTHONPATH = "."
     python scripts/check_missed.py            # then open http://127.0.0.1:8766
     python scripts/check_missed.py --summary  # how many pimples the experts missed
+    python scripts/check_missed.py --freeze   # once all photos are checked, before YOLO training
 
 Click a CLEAR pimple that has no circle to add one (yellow); click your circle again to remove it;
 "Next photo" when the photo is checked. Expert circles (cyan) cannot be changed. Every click is
@@ -26,6 +27,7 @@ from skincare_ml.missed_pimples import (
     add_circle,
     choose_photos,
     default_radius,
+    frozen_record,
     load_state,
     mark_done,
     remove_circle,
@@ -155,11 +157,27 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Check test photos for pimples without a circle.")
     parser.add_argument("--port", type=int, default=8766)
     parser.add_argument("--summary", action="store_true", help="print the result and stop")
+    parser.add_argument("--freeze", action="store_true", help="freeze the checked corrections")
     args = parser.parse_args(argv)
 
     check = Check()
     if args.summary:
         print(json.dumps(check.state()["summary"], indent=1))
+        return 0
+    if args.freeze:
+        target = check.log.with_name("missed_pimples_frozen.json")
+        state = check.state()
+        if target.exists():
+            print(f"{target} already exists: frozen once", file=sys.stderr)
+            return 1
+        if state["photo"] is not None:
+            print("Not every photo is checked yet", file=sys.stderr)
+            return 1
+        record = {**frozen_record(check.photos, load_state(check.log)),
+                  "summary": state["summary"]}  # fmt: skip
+        target.write_text(json.dumps(record, indent=1) + "\n", encoding="utf-8")
+        print(f"Frozen {state['summary']['missed_added']} added circles on "
+              f"{state['summary']['photos_checked']} photos, fingerprint {record['sha256']}")
         return 0
     server = ThreadingHTTPServer(("127.0.0.1", args.port), make_handler(check))
     url = f"http://127.0.0.1:{args.port}"

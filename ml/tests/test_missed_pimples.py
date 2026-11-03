@@ -121,3 +121,18 @@ def test_photo_is_sent_as_a_jpeg(check):
 
 def test_module_states_the_correction_rules():
     assert "only clear misses" in missed_pimples.__doc__
+
+
+def test_freeze_needs_every_photo_checked_and_happens_once(check, capsys):
+    import check_missed
+
+    assert check_missed.main(["--freeze"]) == 1  # photos left to check
+    for p in check.photos:
+        mark_done(check.log, p["file"])
+    add_circle(check.log, check.photos[0]["file"], 400, 300, 20)
+
+    assert check_missed.main(["--freeze"]) == 0
+    assert check_missed.main(["--freeze"]) == 1  # frozen once
+    record = json.loads(check.log.with_name("missed_pimples_frozen.json").read_text())
+    assert record["summary"]["missed_added"] == 1 and len(record["sha256"]) == 64
+    assert record["added"][check.photos[0]["file"]] == [{"x": 400.0, "y": 300.0, "r": 20.0}]
