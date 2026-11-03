@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Missed Pimples</title>
+<style>
+  /* neutral grey, as on the type-labelling page */
+  :root { --bg: #6e6e6e; --panel: #5f5f5f; --text: #f2f2f2; --muted: #d0d0d0; --expert: #00e6ff; --mine: #ffd400; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.4 "Segoe UI", Arial, sans-serif; }
+  main { padding: 12px 16px; }
+  header { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin-bottom: 8px; }
+  h1 { font-size: 19px; margin: 0; }
+  .meta { color: var(--muted); font-size: 13.5px; }
+  button { background: var(--panel); color: var(--text); border: 2px solid transparent; border-radius: 6px;
+           padding: 6px 12px; cursor: pointer; font: inherit; }
+  button:hover, button:focus-visible { border-color: var(--expert); outline: none; }
+  button.primary { border-color: var(--mine); }
+  #view { overflow: auto; height: calc(100vh - 120px); background: var(--panel); border-radius: 6px; }
+  #stage { position: relative; display: inline-block; }
+  #stage img { display: block; }
+  #stage svg { position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair; }
+  .expert { fill: none; stroke: var(--expert); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+  .mine { fill: none; stroke: var(--mine); stroke-width: 2.5; vector-effect: non-scaling-stroke; cursor: pointer; }
+  #notice { color: var(--mine); min-height: 1.4em; font-size: 13.5px; }
+  .done { text-align: center; padding: 60px 0; font-size: 18px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Missed pimples</h1>
+    <span class="meta" id="progress"></span>
+    <span>Zoom
+      <button data-zoom="1">Fit</button><button data-zoom="2">2×</button><button data-zoom="3">3×</button>
+    </span>
+    <button id="back">◀ Back</button>
+    <button id="next" class="primary">Next photo ▶ (Enter)</button>
+  </header>
+  <div class="meta">Click a <b>clear</b> pimple with <b>no</b> circle to add one (yellow). Click your yellow circle to remove it.
+    Cyan = the experts' circles (they cannot be changed). Only add what you are sure about.</div>
+  <div id="notice"></div>
+  <div id="view"><div id="stage"><img id="photo" alt="Test photo"><svg id="marks"></svg></div></div>
+  <section id="finished" class="done" hidden></section>
+</main>
+<script>
+  let state = null;
+  let zoom = 1;
+  const SVG = "http://www.w3.org/2000/svg";
+  const photoEl = document.getElementById("photo");
+  const marks = document.getElementById("marks");
+
+  async function call(path, body) {
+    try {
+      const response = await fetch(path, body === undefined ? {} : {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+      });
+      const data = await response.json();
+      if (!response.ok) { notice(data.error || "Not saved"); return; }
+      show(data);
+    } catch (error) {
+      alert("The check server is not answering. Is it still running?");
+    }
+  }
+
+  function notice(text) {
+    document.getElementById("notice").textContent = text;
+    if (text) setTimeout(() => { document.getElementById("notice").textContent = ""; }, 2500);
+  }
+
+  function fitWidth() {
+    const view = document.getElementById("view");
+    const p = state.photo;
+    const fit = Math.min(view.clientWidth / p.width, view.clientHeight / p.height);
+    photoEl.style.width = `${Math.floor(p.width * fit * zoom)}px`;
+  }
+
+  function show(data) {
+    const previous = state && state.photo && state.photo.index;
+    state = data;
+    const s = data.summary;
+    document.getElementById("progress").textContent =
+      `Photo ${Math.min(data.index + 1, data.total)} / ${data.total}` +
+      (data.photo ? ` · ${data.photo.grade} · ${data.photo.experts.length} expert circles · ${data.photo.added.length} added` : "") +
+      ` · so far: ${s.missed_added} missed on ${s.photos_checked} photos`;
+    const finished = !data.photo;
+    document.getElementById("view").hidden = finished;
+    document.getElementById("finished").hidden = !finished;
+    if (finished) {
+      document.getElementById("finished").textContent =
+        `All ${data.total} photos checked: ${s.missed_added} missed pimples added (${s.missed_per_photo} per photo). You can close this page.`;
+      return;
+    }
+    const p = data.photo;
+    if (previous !== p.index) {
+      photoEl.src = `/photo/${p.index}`;
+      zoom = 1;
+    }
+    marks.setAttribute("viewBox", `0 0 ${p.width} ${p.height}`);
+    marks.replaceChildren();
+    for (const [x1, y1, x2, y2] of p.experts) {
+      circle((x1 + x2) / 2, (y1 + y2) / 2, Math.max((x2 - x1) / 2 + 6, 10), "expert");
+    }
+    for (const c of p.added) {
+      const el = circle(c.x, c.y, c.r + 6, "mine");
+      el.addEventListener("click", (event) => { event.stopPropagation(); call("/api/remove", { id: c.id }); });
+    }
+    fitWidth();
+  }
+
+  function circle(x, y, r, cls) {
+    const el = document.createElementNS(SVG, "circle");
+    el.setAttribute("cx", x); el.setAttribute("cy", y); el.setAttribute("r", r);
+    el.setAttribute("class", cls);
+    marks.appendChild(el);
+    return el;
+  }
+
+  marks.addEventListener("click", (event) => {
+    const p = state.photo;
+    const box = marks.getBoundingClientRect();
+    const x = (event.clientX - box.left) * p.width / box.width;
+    const y = (event.clientY - box.top) * p.height / box.height;
+    const inside = p.experts.some(([x1, y1, x2, y2]) =>
+      Math.hypot(x - (x1 + x2) / 2, y - (y1 + y2) / 2) <= Math.max((x2 - x1) / 2 + 6, 10));
+    if (inside) { notice("That spot already has an expert circle."); return; }
+    call("/api/add", { x, y });
+  });
+
+  document.querySelectorAll("button[data-zoom]").forEach((b) =>
+    b.addEventListener("click", () => { zoom = Number(b.dataset.zoom); fitWidth(); }));
+  document.getElementById("next").addEventListener("click", () => call("/api/done", {}));
+  document.getElementById("back").addEventListener("click", () => call("/api/back", {}));
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") { event.preventDefault(); call("/api/done", {}); }
+  });
+  window.addEventListener("resize", () => state && state.photo && fitWidth());
+  call("/api/state");
+</script>
+</body>
+</html>
