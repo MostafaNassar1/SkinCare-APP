@@ -318,3 +318,43 @@ def test_scout_queue_takes_likely_pustules_then_unsure_circles():
     assert [c["pustule"] for c in likely] == [0.99, 0.98, 0.97, 0.94, 0.93, 0.92, 0.89]
     unsure = [by_id[item.id] for item in new if by_id[item.id] not in likely]
     assert max(c["margin"] for c in unsure) <= 0.05  # the 3 least sure ones
+
+
+# ---------- drift check ----------
+
+
+def test_drift_check_takes_each_type_from_training_photos_only():
+    items = [{"id": f"t{n}", "file": "f", "box": [0, 0, 20, 20], "split": "train", "grade": "mild"}
+             for n in range(30)]
+    items += [{"id": "x0", "file": "f", "box": [0, 0, 20, 20], "split": "test", "grade": "mild"},
+              {"id": "repeat:t0", "file": "f", "box": [0, 0, 20, 20], "split": "train",
+               "grade": "mild"}]  # fmt: skip
+    answers = {f"t{n}": lesion_types.LEARNED[n % 3] for n in range(30)} | {"x0": "pustule"}
+
+    queue = lesion_types.drift_check_queue(items, answers, per_type=4, seed=1)
+
+    assert len(queue) == 12 and all(i.id.startswith("recheck:") for i in queue)
+    assert Counter(answers[i.id.removeprefix("recheck:")] for i in queue) == {
+        "whitehead": 4, "papule": 4, "pustule": 4}  # fmt: skip
+    assert "recheck:t0" not in {i.id for i in queue}  # already shown as a hidden repeat
+    assert "recheck:x0" not in {i.id for i in queue}  # test photos never
+
+
+def test_drift_report_shows_a_moved_papule_pustule_boundary():
+    earlier = {"a": "papule", "b": "papule", "c": "pustule", "d": "whitehead"}
+    recheck = {"recheck:a": "pustule", "recheck:b": "papule", "recheck:c": "pustule",
+               "recheck:d": "whitehead"}  # fmt: skip
+
+    report = lesion_types.drift_report(earlier, recheck)
+
+    assert report["pairs"] == 4 and report["same"] == 0.75
+    assert (report["pustule_before"], report["pustule_now"]) == (1, 2)
+    assert report["by_earlier_answer"]["papule"] == {"pustule": 1, "papule": 1}
+
+
+def test_rechecks_are_never_training_examples():
+    queue = [{"id": "a", "split": "train"}, {"id": "recheck:a", "split": "train"}]
+
+    examples = lesion_types.labelled_examples([queue], {"a": "papule", "recheck:a": "pustule"})
+
+    assert [e["id"] for e in examples] == ["a"]

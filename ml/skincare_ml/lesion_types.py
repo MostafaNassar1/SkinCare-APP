@@ -208,7 +208,7 @@ def labelled_examples(queues: list[list[dict]], answers: dict[str, str]) -> list
     for queue in queues:
         for item in queue:
             label = answers.get(item["id"])
-            if item["id"].startswith("repeat:") or item["split"] == "test" or label not in LEARNED:
+            if item["id"].startswith(("repeat:", "recheck:")) or item["split"] == "test"                     or label not in LEARNED:
                 continue
             repeat = answers.get(f"repeat:{item['id']}")
             if repeat is not None and repeat != label:
@@ -243,3 +243,38 @@ def scout_queue(
     rng.shuffle(chosen)
     items = [Item(c["id"], c["file"], tuple(c["box"]), c["split"], c["grade"]) for c in chosen]
     return _add_repeats(items, rng)
+
+
+# ---------- drift check (did the labeller's standard move between rounds?) ----------
+
+
+def drift_check_queue(
+    items: list[dict], answers: dict[str, str], per_type: int, seed: int
+) -> list[Item]:
+    """Close-ups answered in an earlier round, shown again blind as "recheck:<id>": `per_type` of
+    each learned type (so a moved papule / pustule boundary can show), training photos only, not
+    ones already shown as hidden repeats, shuffled."""
+    rng = random.Random(seed)
+    repeated = {i["id"].removeprefix("repeat:") for i in items if i["id"].startswith("repeat:")}
+    chosen = []
+    for kind in LEARNED:
+        pool = [i for i in items if i["split"] == "train" and answers.get(i["id"]) == kind
+                and not i["id"].startswith("repeat:") and i["id"] not in repeated]  # fmt: skip
+        chosen += rng.sample(pool, min(per_type, len(pool)))
+    rng.shuffle(chosen)
+    return [Item(f"recheck:{i['id']}", i["file"], tuple(i["box"]), i["split"], i["grade"])
+            for i in chosen]  # fmt: skip
+
+
+def drift_report(earlier: dict[str, str], recheck: dict[str, str]) -> dict:
+    """For each earlier answer, what the recheck said; and how often "pustule" was given."""
+    pairs = [(earlier[k.removeprefix("recheck:")], v) for k, v in recheck.items()
+             if k.startswith("recheck:") and k.removeprefix("recheck:") in earlier]  # fmt: skip
+    table = {before: dict(Counter(after for b, after in pairs if b == before)) for before in LEARNED}
+    return {
+        "pairs": len(pairs),
+        "same": round(sum(a == b for a, b in pairs) / len(pairs), 3) if pairs else None,
+        "pustule_before": sum(a == "pustule" for a, _ in pairs),
+        "pustule_now": sum(b == "pustule" for _, b in pairs),
+        "by_earlier_answer": table,
+    }
