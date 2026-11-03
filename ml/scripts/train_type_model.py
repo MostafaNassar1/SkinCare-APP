@@ -9,10 +9,11 @@ The second stage of the pimple pipeline (decided 2026-11-03: small enough for th
 needs the GPU laptop). Same code as the scout (skincare_ml/type_model.py), trained on every usable
 label of the labelling rounds (training photos), the best epoch chosen on the validation photos.
 The frozen test labels are NOT used here: the test is run once, at the end, on the final models.
-Writes C:\SkinCareData\models\lesion_type_model.pt and prepared/lesion_types/type_model_report.json
-(variants: lesion_type_model_<variant>.pt, type_model_report_<variant>.json). Only two variants are
-tried (decided 2026-11-03), the better one on VALIDATION kept: trying many would make the
-validation score unreliable too.
+Writes C:\SkinCareData\models\lesion_type_model_<variant>.pt and
+prepared/lesion_types/type_model_report_<variant>.json; lesion_type_model.pt is a copy of the CHOSEN
+variant (2026-11-04: "large", see lesion_type_model_chosen.json), never written here. Only two
+variants were tried (decided 2026-11-03), the best on VALIDATION kept: trying many would make
+the validation score unreliable too.
 """
 
 import argparse
@@ -55,7 +56,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--variant", choices=VARIANTS, default="base")
     args = parser.parse_args(argv)
     architecture, size = VARIANTS[args.variant]
-    suffix = "" if args.variant == "base" else f"_{args.variant}"
+    suffix = f"_{args.variant}"  # never the chosen model's file name
 
     folder = config.prepared_dir() / "lesion_types"
     examples = labelled_examples(*all_rounds(folder))

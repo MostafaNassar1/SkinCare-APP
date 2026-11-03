@@ -271,3 +271,20 @@ same boundary where the student's own repeat answers changed most. Validation st
 after epoch 9 (overfitting afterwards). The frozen test labels were NOT used. Planned (the
 student's decision: later, when they say so): two variants only, 160 px close-ups and
 MobileNetV3-large, the better one on validation kept.
+
+**Two variants (2026-11-04, as agreed: only two, chosen on validation).** Same labels, seed, 20
+epochs; validation = the 374 close-ups:
+
+| | base (small, 96 px) | 160px (small, 160 px) | **large (MobileNetV3-large, 96 px)** |
+|---|---|---|---|
+| best balanced accuracy (epoch) | 0.628 (9) | 0.649 (19) | **0.681 (3)** |
+| recall whitehead / papule / pustule | 0.82 / 0.61 / 0.46 | 0.90 / 0.62 / 0.43 | 0.84 / **0.72** / **0.49** |
+| inflamed spots called inflamed | 79% | 78% | **85%** |
+| CPU training time | 7.4 min | 9.6 min | 12.2 min |
+
+**Chosen: large** (`C:\SkinCareData\models\lesion_type_model.pt`, a copy of
+`lesion_type_model_large.pt`; the others are kept). Honest caveat: validation scores move by
+±0.03-0.05 between epochs and "large" peaked at epoch 3 (later epochs ~0.60-0.63), so taking the
+best of 20 epochs is optimistic; the frozen test set, used once at the end, gives the real
+number. Papule vs pustule stays the hardest boundary for every variant (31 of 72 pustules called
+papules by "large"), matching the labeller's own repeat changes.
