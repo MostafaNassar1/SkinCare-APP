@@ -10,5 +10,16 @@ opencv-python-headless==4.14.0.94
 torch==2.15.0
 torchvision==0.29.2
 
+# Ultralytics YOLO11 (AGPL-3.0: our repository is public, which meets it; academic use), the
+# pimple finder. Installed WITHOUT its dependencies, because it would pull in opencv-python
+# (possibly OpenCV 5, which breaks YuNet, see above):
+#   pip install --no-deps ultralytics==8.4.201
+# then its small helpers below. Usage statistics switched off: yolo settings sync=False
+matplotlib==3.11.2
+polars==2.1.0
+psutil==7.2.2
+ultralytics-thop==2.2.4
+requests==2.34.2
+
 # Testing
 pytest==9.1.1
