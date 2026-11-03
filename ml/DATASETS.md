@@ -256,3 +256,18 @@ are frozen (`prepared/corrections/missed_pimples_frozen.json`, SHA-256
 `730c4cd7f683553761d15122921855d5b098e8bf197de0084df047c9420f81d3`) and join the expert circles of
 those 50 photos for YOLO's test; results are reported on the 50 checked photos and on all 174 test
 photos.
+
+## Type model, first final version (2026-11-03)
+
+`scripts/train_type_model.py` (same code as the scout; CPU, 7.4 minutes): MobileNetV3-small,
+ImageNet-pretrained, 96 px close-ups, 20 epochs, trained on 1,361 close-ups (whitehead 626, papule
+468, pustule 267), best epoch chosen on 374 validation close-ups (184 / 118 / 72); weights in
+`C:\SkinCareData\models\lesion_type_model.pt` (never committed). **Best epoch 9: balanced accuracy
+0.628, accuracy 0.68; recall whitehead 0.815, papule 0.610, pustule 0.458.** Confusion (rows =
+student, columns = model): whitehead 150 / 20 / 14, papule 29 / 72 / 17, pustule 10 / 29 / 33.
+Inflamed vs not inflamed works well (151 of 190 inflamed spots called papule or pustule: 79%;
+whiteheads 82%); papule vs pustule is the hard boundary (29 of 72 pustules called papules), the
+same boundary where the student's own repeat answers changed most. Validation stopped improving
+after epoch 9 (overfitting afterwards). The frozen test labels were NOT used. Planned (the
+student's decision: later, when they say so): two variants only, 160 px close-ups and
+MobileNetV3-large, the better one on validation kept.
