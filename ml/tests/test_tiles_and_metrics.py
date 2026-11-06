@@ -193,3 +193,55 @@ def test_data_yaml_lists_the_phone_copies_for_run_c(train_yolo, monkeypatch, tmp
 
     assert "  - images/train\n  - images/train_phone" in text and "val: images/val" in text
     assert "\ntest:" not in text  # the frozen test set is never used while training
+
+
+# ---------- comparing models ----------
+
+
+@pytest.fixture
+def compare(monkeypatch, tmp_path):
+    monkeypatch.setenv("SKINCARE_DATA_DIR", str(tmp_path))
+    monkeypatch.syspath_prepend(str(SCRIPTS))
+    sys.modules.pop("compare_models", None)
+    import compare_models
+
+    return compare_models
+
+
+def test_model_argument_names_file_and_mode(compare, tmp_path):
+    name, path, mode = compare.parse_model("v1=yolo_pimples_v1.pt:whole")
+
+    assert (name, mode) == ("v1", "whole")
+    assert path == tmp_path.resolve() / "models" / "yolo_pimples_v1.pt"
+    with pytest.raises(Exception):
+        compare.parse_model("v1=model.pt:sideways")
+
+
+def test_spearman_rank_correlation(compare):
+    assert compare.spearman([1, 2, 3, 4], [10, 20, 30, 40]) == 1.0
+    assert compare.spearman([1, 2, 3, 4], [40, 30, 20, 10]) == -1.0
+    assert compare.spearman([1, 2], [1, 2]) is None
+
+
+def test_phone_photo_is_smaller_and_degraded():
+    photo = Image.new("RGB", (1000, 800), (200, 150, 130))
+
+    small = yolo_tiles.phone_photo(photo, random.Random(1), factor=0.4)
+
+    assert small.size == (400, 320)
+
+
+def test_evaluate_scores_whole_and_phone_like_photos(compare, tmp_path):
+    sources = tmp_path / "sources"
+    (sources / "acne04").mkdir(parents=True)
+    photo = Image.new("RGB", (1000, 800), (180, 140, 120))
+    photo.paste((255, 255, 255), (400, 300, 440, 340))
+    photo.save(sources / "acne04" / "p.png")
+    photos = [{"file": "acne04/p.png", "boxes": [{"box": [400, 300, 440, 340]}],
+               "original_lesion_count": 1}]  # fmt: skip
+
+    original = compare.evaluate(FakeModel(), "whole", photos, sources, phone=False, device=None)
+    tiled = compare.evaluate(FakeModel(), "tiled", photos, sources, phone=False, device=None)
+
+    assert original["recall"] == 1.0 and original["precision"] == 1.0
+    assert tiled["recall"] == 1.0

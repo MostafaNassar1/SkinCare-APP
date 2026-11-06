@@ -87,6 +87,22 @@ def phone_like(image: Image.Image, rng: random.Random) -> Image.Image:
     return Image.open(buffer).convert("RGB")
 
 
+def phone_photo(image: Image.Image, rng: random.Random,
+                factor: float = 0.4) -> Image.Image:  # fmt: skip
+    """A whole photo as a phone selfie might give it: `factor` times smaller (boxes must be
+    scaled by the same factor), then blurred, compressed, brighter or darker. Used to score the
+    models on selfie-like versions of the validation photos."""
+    width, height = image.size
+    small = image.resize((max(1, int(width * factor)), max(1, int(height * factor))),
+                         Image.LANCZOS)  # fmt: skip
+    small = small.filter(ImageFilter.GaussianBlur(rng.uniform(0.3, 1.0)))
+    small = ImageEnhance.Brightness(small).enhance(rng.uniform(0.75, 1.15))
+    buffer = io.BytesIO()
+    small.save(buffer, "JPEG", quality=rng.randint(45, 75))
+    buffer.seek(0)
+    return Image.open(buffer).convert("RGB")
+
+
 def export_tiles(manifest: dict, sources: Path, out: Path, seed: int = 2026,
                  phone: bool = True) -> dict:  # fmt: skip
     """Write the tile dataset; returns counts. Refuses to write into an existing one."""
