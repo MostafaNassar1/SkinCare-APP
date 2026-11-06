@@ -245,3 +245,9 @@ def test_evaluate_scores_whole_and_phone_like_photos(compare, tmp_path):
 
     assert original["recall"] == 1.0 and original["precision"] == 1.0
     assert tiled["recall"] == 1.0
+
+
+def test_tile_runs_need_fewer_epochs(train_yolo):
+    assert train_yolo.run_settings("A")["epochs"] == 60
+    tiles = train_yolo.run_settings("B")
+    assert (tiles["epochs"], tiles["patience"], tiles["imgsz"]) == (20, 8, 1024)

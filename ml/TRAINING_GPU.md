@@ -65,3 +65,76 @@ python scripts/train_yolo.py
 Copy `C:\SkinCareData\prepared\yolo_runs\pimples\` (weights `best.pt` + the results and plots)
 back to the same path on the development laptop. The test-set evaluation (on all 174 test photos
 and on the 50 checked ones) and the ONNX export are run from there.
+
+---
+
+# Fine-tuning session: runs A, B and C (prepared 2026-11-06)
+
+v1 (trained 2026-11-05, RTX 5070 Laptop 8 GB) found only **16%** of the smallest pimples (under
+20 px) and got clearly worse on selfie-like photos (validation AP50 0.50 → 0.41). Three runs, each
+ONE change, each starting from v1, compared afterwards on the validation photos only:
+
+| Run | Change | Data | Expected time |
+|---|---|---|---|
+| A | fixed batch of 4 instead of the automatic 1 | `yolo_pimples` (already on the GPU laptop) | ~1 h |
+| B | 1,024 px tiles of the full-resolution photos (pimples at their real size) | `yolo_pimples_tiles` (new) | ~2 h |
+| C | as B + one phone-like copy of every training tile | `yolo_pimples_tiles` (same folder) | ~4 h |
+
+The three runs are independent: run them one after another (e.g. overnight).
+
+## 1. Update the repository on the GPU laptop
+
+Its copy still has the uncommitted launcher changes of 2026-11-05; they are now in the branch, so
+discard them first:
+
+```
+cd D:\Development\Projects\skincare_ai\SkinCare-APP
+git checkout -- ml/scripts/train_yolo.py
+git checkout mostafa/feature/phase3-step3-pimple-detector
+git pull
+```
+
+## 2. Copy (USB drive, ~2.6 GB)
+
+| From the development laptop | To the GPU laptop's data folder | Size |
+|---|---|---|
+| `C:\SkinCareData\prepared\yolo_pimples_tiles\` | `...\SkinCareData\prepared\yolo_pimples_tiles\` | 2.5 GB |
+| `C:\SkinCareData\models\yolo_pimples_v1.pt` | `...\SkinCareData\models\yolo_pimples_v1.pt` | 19 MB |
+
+(`yolo_pimples_v1.pt` is v1's `best.pt`, SHA-256 `666a016c…`; if the GPU laptop still has
+`yolo_runs\pimples_lr0025\weights\best.pt`, copying that file to `models\yolo_pimples_v1.pt` there
+is the same.) `yolo_pimples\` is already on the GPU laptop from v1.
+
+## 3. Train (one command per run)
+
+```
+cd D:\Development\Projects\skincare_ai\SkinCare-APP\ml
+conda activate hsn
+$env:SKINCARE_DATA_DIR = "D:\Development\Data\Datasets\Processed\SkinCareData"
+$env:PYTHONPATH = "."
+python scripts/train_yolo.py --run A --epoch-confidence
+python scripts/train_yolo.py --run B --epoch-confidence
+python scripts/train_yolo.py --run C --epoch-confidence
+```
+
+- If a run stops with **"CUDA out of memory"**, start it again with `--batch 2` added.
+- Do **not** open `results.csv` in Excel while training (that stopped the first v1 run).
+- A stopped run continues with `yolo train resume model=...\yolo_runs\pimples_<run>\weights\last.pt`.
+
+## 4. Score them on validation (optional on the GPU laptop: much faster there)
+
+```
+python scripts/compare_models.py --model v1=yolo_pimples_v1.pt:whole `
+    --model A=..\prepared\yolo_runs\pimples_A\weights\best.pt:whole `
+    --model B=..\prepared\yolo_runs\pimples_B\weights\best.pt:tiled `
+    --model C=..\prepared\yolo_runs\pimples_C\weights\best.pt:tiled
+```
+
+(a relative path starts in the data folder's `models\`; full paths work too:
+`--model A=D:\...\yolo_runs\pimples_A\weights\best.pt:whole`). The test
+photos are NOT used here.
+
+## 5. Bring back
+
+`...\prepared\yolo_runs\pimples_A\`, `pimples_B\`, `pimples_C\` (weights + results) and, if step 4
+was run, the newest `...\prepared\yolo_evaluations\compare_val_*.json`.

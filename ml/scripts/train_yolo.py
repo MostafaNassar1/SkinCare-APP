@@ -42,16 +42,19 @@ SHARED = {
     "plots": True,
 }
 FINE_TUNE = {"epochs": 60, "patience": 20, "lr0": 0.001, "warmup_epochs": 1.0, "batch": 4}
+# tiles: 11,403 training tiles (22,806 with the phone copies) instead of 818 photos, so one epoch
+# shows the model ~9x (C: ~18x) more pimples: far fewer epochs are needed (2026-11-06)
+TILE_TUNE = FINE_TUNE | {"epochs": 20, "patience": 8, "close_mosaic": 5, "imgsz": 1024}
 # run -> (dataset folder, starting weights in C:\SkinCareData\models, phone copies, settings)
 RUNS = {
     "v1": ("yolo_pimples", "yolo11s.pt", False,
            {"imgsz": 1280, "epochs": 150, "patience": 25, "batch": -1, "lr0": 0.0025}),
     "A": ("yolo_pimples", "yolo_pimples_v1.pt", False, FINE_TUNE | {"imgsz": 1280}),
-    "B": ("yolo_pimples_tiles", "yolo_pimples_v1.pt", False, FINE_TUNE | {"imgsz": 1024}),
-    "C": ("yolo_pimples_tiles", "yolo_pimples_v1.pt", True, FINE_TUNE | {"imgsz": 1024}),
+    "B": ("yolo_pimples_tiles", "yolo_pimples_v1.pt", False, TILE_TUNE),
+    "C": ("yolo_pimples_tiles", "yolo_pimples_v1.pt", True, TILE_TUNE),
 }  # fmt: skip
 SMOKE = {"epochs": 1, "batch": 2, "fraction": 0.01, "device": "cpu", "workers": 0, "plots": False,
-         "imgsz": 640}  # fmt: skip
+         "imgsz": 640, "val": False}  # fmt: skip  (validation was proven by v1's smoke run)
 
 
 def data_yaml(dataset_name: str, phone_copies: bool = False) -> str:
