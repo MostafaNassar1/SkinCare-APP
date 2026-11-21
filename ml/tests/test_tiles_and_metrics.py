@@ -251,3 +251,20 @@ def test_tile_runs_need_fewer_epochs(train_yolo):
     assert train_yolo.run_settings("A")["epochs"] == 60
     tiles = train_yolo.run_settings("B")
     assert (tiles["epochs"], tiles["patience"], tiles["imgsz"]) == (20, 8, 1024)
+
+
+def test_runs_use_no_loader_workers_to_spare_ram(train_yolo):
+    for run in ("A", "B", "C"):
+        settings = train_yolo.run_settings(run)
+        assert (settings["workers"], settings["cache"]) == (0, False)
+
+
+def test_resume_needs_a_saved_checkpoint(train_yolo, monkeypatch, tmp_path):
+    monkeypatch.setenv("SKINCARE_DATA_DIR", str(tmp_path))
+    monkeypatch.setitem(sys.modules, "ultralytics", type(sys)("ultralytics"))
+    sys.modules["ultralytics"].YOLO = lambda path: None
+
+    with pytest.raises(SystemExit):
+        train_yolo.main(["--run", "B", "--resume"])
+    with pytest.raises(SystemExit):
+        train_yolo.main(["--run", "B", "--resume", "--smoke"])

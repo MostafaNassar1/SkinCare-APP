@@ -40,6 +40,10 @@ SHARED = {
     "flipud": 0.0,
     "degrees": 0.0,
     "plots": True,
+    # Windows worker processes duplicate Python/PyTorch memory: 8 workers exhausted the 16 GB of
+    # the GPU laptop during run A (2026-11-15); 0 workers and no image cache fixed it
+    "workers": 0,
+    "cache": False,
 }
 FINE_TUNE = {"epochs": 60, "patience": 20, "lr0": 0.001, "warmup_epochs": 1.0, "batch": 4}
 # tiles: 11,403 training tiles (22,806 with the phone copies) instead of 818 photos, so one epoch
@@ -145,6 +149,8 @@ def main(argv: list[str] | None = None) -> int:
                         help="override the run's batch (e.g. 2 if out of memory)")
     parser.add_argument("--lr", type=float, help="override the run's base learning rate (AdamW)")
     parser.add_argument("--name", default=None, help="run name (default: pimples_<run>)")
+    parser.add_argument("--resume", action="store_true",
+                        help="continue this run from its saved last.pt (after an interruption)")
     parser.add_argument("--epoch-confidence", action="store_true",
                         help="only epoch summaries (with best-F1 confidence), warnings and errors")
     args = parser.parse_args(argv)
@@ -166,14 +172,24 @@ def main(argv: list[str] | None = None) -> int:
         LOGGER.setLevel("WARNING")  # also hides the batch progress bars
 
     dataset, weights, phone, _ = RUNS[args.run]
-    model = YOLO(str(starting_weights(weights)))
+    run_name = args.name or (f"smoke_{args.run}" if args.smoke else f"pimples_{args.run}")
+    if args.resume:  # e.g. run A after the RAM incident, run C after a Windows Update restart
+        if args.smoke:
+            parser.error("--resume cannot be combined with --smoke")
+        checkpoint = config.prepared_dir() / "yolo_runs" / run_name / "weights" / "last.pt"
+        if not checkpoint.is_file():
+            parser.error(f"Resume checkpoint not found: {checkpoint}")
+        model = YOLO(str(checkpoint))
+    else:
+        model = YOLO(str(starting_weights(weights)))
     if args.epoch_confidence:
         model.add_callback("on_model_save", print_epoch_confidence)
     model.train(
         data=data_yaml(dataset, phone),
         project=str(config.prepared_dir() / "yolo_runs"),
-        name=args.name or (f"smoke_{args.run}" if args.smoke else f"pimples_{args.run}"),
+        name=run_name,
         exist_ok=args.smoke,
+        resume=args.resume,
         **run_settings(args.run, args.smoke, args.batch, args.lr),
     )
     return 0
