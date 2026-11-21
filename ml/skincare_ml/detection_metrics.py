@@ -51,14 +51,45 @@ def match(pred: np.ndarray, scores: np.ndarray, truth: np.ndarray,
     return hits, found
 
 
-def score(photos: list[dict], cutoff: float | None = None) -> dict:
+def match_centre(pred: np.ndarray, scores: np.ndarray,
+                 truth: np.ndarray) -> tuple[np.ndarray, np.ndarray]:  # fmt: skip
+    """As match, but a prediction finds an expert box when its CENTRE lies inside it: the dot the
+    app draws is on the pimple (added 2026-11-21). The box rule punishes a box shifted by a few
+    pixels on a 15-pixel pimple; this rule measures what the user sees. Both are reported."""
+    hits = np.zeros(len(pred), dtype=bool)
+    found = np.full(len(pred), -1)
+    if len(pred) == 0 or len(truth) == 0:
+        return hits, found
+    cx = (pred[:, 0] + pred[:, 2]) / 2
+    cy = (pred[:, 1] + pred[:, 3]) / 2
+    taken = np.zeros(len(truth), dtype=bool)
+    truth_cx = (truth[:, 0] + truth[:, 2]) / 2
+    truth_cy = (truth[:, 1] + truth[:, 3]) / 2
+    for p in np.argsort(-scores, kind="stable"):
+        inside = (~taken & (truth[:, 0] <= cx[p]) & (cx[p] <= truth[:, 2])
+                  & (truth[:, 1] <= cy[p]) & (cy[p] <= truth[:, 3]))  # fmt: skip
+        candidates = np.where(inside)[0]
+        if len(candidates):  # the expert box whose centre is closest
+            distance = (truth_cx[candidates] - cx[p]) ** 2 + (truth_cy[candidates] - cy[p]) ** 2
+            best = candidates[np.argmin(distance)]
+            taken[best] = True
+            hits[p], found[p] = True, best
+    return hits, found
+
+
+MATCHERS = {"box": match, "centre": match_centre}
+
+
+def score(photos: list[dict], cutoff: float | None = None, rule: str = "box") -> dict:
     """photos: [{"pred", "scores", "truth"}] (numpy, photo pixels). Precision / recall are given
-    at `cutoff`, or at the best-F1 cutoff when it is None."""
+    at `cutoff`, or at the best-F1 cutoff when it is None. rule: "box" (IoU >= 0.5, as mAP50) or
+    "centre" (the dot is on the pimple)."""
+    matcher = MATCHERS[rule]
     all_scores, all_hits = [], []
     sizes, found_at = [], []  # per expert box: its size, and the score it was found with (or -1)
     total_truth = 0
     for photo in photos:
-        hits, found = match(photo["pred"], photo["scores"], photo["truth"])
+        hits, found = matcher(photo["pred"], photo["scores"], photo["truth"])
         all_scores.append(photo["scores"])
         all_hits.append(hits)
         truth = photo["truth"]
@@ -120,7 +151,7 @@ def _ap_precision_recall(scores: np.ndarray, hits: np.ndarray, total_truth: int,
 
 
 def bootstrap(runs: dict[str, list[dict]], cutoffs: dict[str, float], rounds: int = 1000,
-              seed: int = 2026) -> dict:  # fmt: skip
+              seed: int = 2026, rule: str = "box") -> dict:  # fmt: skip
     """How sure the scores are (added 2026-11-21): the PHOTOS are drawn again with replacement
     `rounds` times and every model is re-scored on each draw. 95% range = the middle 95% of those
     scores. The same draws are used for every model (paired), so "A beats C in x% of the draws"
@@ -134,7 +165,7 @@ def bootstrap(runs: dict[str, list[dict]], cutoffs: dict[str, float], rounds: in
     per_photo = {}
     for name, rows in runs.items():
         per_photo[name] = [(np.asarray(r["scores"], dtype=float),
-                            match(r["pred"], r["scores"], r["truth"])[0], len(r["truth"]))
+                            MATCHERS[rule](r["pred"], r["scores"], r["truth"])[0], len(r["truth"]))
                            for r in rows]  # fmt: skip
     rng = np.random.default_rng(seed)
     drawn = {name: np.zeros((rounds, 3)) for name in names}  # AP50, precision, recall

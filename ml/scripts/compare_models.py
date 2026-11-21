@@ -151,6 +151,20 @@ def evaluate(model, mode: str, photos: list[dict], sources: Path, phone=False, d
     return score_rows(predict_rows(model, mode, photos, sources, factor, device, faces))
 
 
+def load_photos(split: str) -> list[dict]:
+    """The manifest's photos of a split, sorted by file; test photos with the student's frozen
+    additions of missed pimples (prepared/corrections/missed_pimples_frozen.json)."""
+    prepared = config.prepared_dir()
+    manifest = json.loads((prepared / "manifests" / "pimples.json").read_text(encoding="utf-8"))
+    photos = [i for i in manifest["images"] if i["split"] == split]
+    if split == "test":
+        frozen = prepared / "corrections" / "missed_pimples_frozen.json"
+        extra = added_boxes(json.loads(frozen.read_text(encoding="utf-8")))
+        photos = [{**p, "boxes": p["boxes"] + [{"box": b} for b in extra.get(p["file"], [])]}
+                  for p in photos]  # fmt: skip
+    return sorted(photos, key=lambda p: p["file"])
+
+
 def condition_name(factor: float | None) -> str:
     return "original" if factor is None else f"phone x{factor:g}"
 
@@ -179,16 +193,10 @@ def main(argv: list[str] | None = None) -> int:
     from ultralytics import YOLO
 
     prepared = config.prepared_dir()
-    manifest = json.loads((prepared / "manifests" / "pimples.json").read_text(encoding="utf-8"))
     split = "test" if args.final_test else "val"
-    photos = [i for i in manifest["images"] if i["split"] == split]
     if split == "test":
         print("FINAL TEST: the test photos are scored once, for the chosen model only")
-        frozen = prepared / "corrections" / "missed_pimples_frozen.json"
-        extra = added_boxes(json.loads(frozen.read_text(encoding="utf-8")))
-        photos = [{**p, "boxes": p["boxes"] + [{"box": b} for b in extra.get(p["file"], [])]}
-                  for p in photos]  # fmt: skip
-    photos = sorted(photos, key=lambda p: p["file"])[: args.limit]
+    photos = load_photos(split)[: args.limit]
     sources = config.data_dir() / "sources"
 
     faces = None
