@@ -8,7 +8,8 @@ in photo pixels:
 - AP50 = area under the precision-recall curve (all-point, as in PASCAL VOC / COCO);
 - the best-F1 confidence cutoff, and precision / recall at it or at a given cutoff;
 - recall by pimple size (the expert box side in photo pixels), to see whether small ones improve;
-- count error per photo against the expert circles (the acne grade comes from a count).
+- count error per photo against the expert circles (the acne grade comes from a count);
+- bootstrap 95% ranges, to tell real differences between models from luck of the photos.
 """
 
 import numpy as np
@@ -105,6 +106,62 @@ def score(photos: list[dict], cutoff: float | None = None) -> dict:
         if counts else None,
         "count_mean_bias": round(float(np.mean([a - b for a, b in counts])), 2) if counts else None,
     }
+
+
+def _ap_precision_recall(scores: np.ndarray, hits: np.ndarray, total_truth: int,
+                         cutoff: float) -> tuple[float, float, float]:  # fmt: skip
+    order = np.argsort(-scores, kind="stable")
+    tp = np.cumsum(hits[order])
+    fp = np.cumsum(~hits[order])
+    ap = average_precision(tp / max(total_truth, 1), tp / np.maximum(tp + fp, 1))
+    kept = scores >= cutoff
+    tp_at = int(hits[kept].sum())
+    return ap, tp_at / max(int(kept.sum()), 1), tp_at / max(total_truth, 1)
+
+
+def bootstrap(runs: dict[str, list[dict]], cutoffs: dict[str, float], rounds: int = 1000,
+              seed: int = 2026) -> dict:  # fmt: skip
+    """How sure the scores are (added 2026-11-21): the PHOTOS are drawn again with replacement
+    `rounds` times and every model is re-scored on each draw. 95% range = the middle 95% of those
+    scores. The same draws are used for every model (paired), so "A beats C in x% of the draws"
+    compares the models on identical photo sets. runs: model -> rows of the SAME photos, in the
+    same order (see score); cutoffs: each model's confidence cutoff for precision / recall."""
+    names = list(runs)
+    sizes = {len(rows) for rows in runs.values()}
+    if len(sizes) != 1:
+        raise ValueError("every model must be scored on the same photos")
+    count = sizes.pop()
+    per_photo = {}
+    for name, rows in runs.items():
+        per_photo[name] = [(np.asarray(r["scores"], dtype=float),
+                            match(r["pred"], r["scores"], r["truth"])[0], len(r["truth"]))
+                           for r in rows]  # fmt: skip
+    rng = np.random.default_rng(seed)
+    drawn = {name: np.zeros((rounds, 3)) for name in names}  # AP50, precision, recall
+    for k in range(rounds):
+        pick = rng.integers(0, count, count)
+        for name in names:
+            rows = per_photo[name]
+            drawn[name][k] = _ap_precision_recall(
+                np.concatenate([rows[i][0] for i in pick]),
+                np.concatenate([rows[i][1] for i in pick]),
+                sum(rows[i][2] for i in pick), cutoffs[name])  # fmt: skip
+
+    def middle(values: np.ndarray) -> list[float]:
+        return [round(float(v), 4) for v in np.percentile(values, [2.5, 97.5])]
+
+    result = {"rounds": rounds, "photos": count, "models": {}, "pairs": {}}
+    for name in names:
+        result["models"][name] = {metric: middle(drawn[name][:, i])
+                                  for i, metric in enumerate(("AP50", "precision", "recall"))}  # fmt: skip
+    for i, first in enumerate(names):
+        for second in names[i + 1 :]:
+            difference = drawn[first][:, 0] - drawn[second][:, 0]
+            result["pairs"][f"{first} - {second}"] = {
+                "AP50_difference_95": middle(difference),
+                "first_better_share": round(float((difference > 0).mean()), 3),
+            }
+    return result
 
 
 def average_precision(recall: np.ndarray, precision: np.ndarray) -> float:

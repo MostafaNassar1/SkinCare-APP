@@ -268,3 +268,77 @@ def test_resume_needs_a_saved_checkpoint(train_yolo, monkeypatch, tmp_path):
         train_yolo.main(["--run", "B", "--resume"])
     with pytest.raises(SystemExit):
         train_yolo.main(["--run", "B", "--resume", "--smoke"])
+
+
+# ---------- face crop and bootstrap (2026-11-21) ----------
+
+
+def test_face_crop_keeps_only_boxes_inside_the_face_in_crop_pixels(compare):
+    photo = Image.new("RGB", (1000, 800))
+    truth = np.array([[300, 300, 340, 340],  # inside
+                      [10, 10, 30, 30],  # background: left out
+                      [570, 400, 610, 440]], dtype=float)  # centre inside, cut at the edge  # fmt: skip
+
+    crop, moved = compare.crop_to_face(photo, truth, [200, 100, 600, 700])
+
+    assert crop.size == (400, 600)
+    assert moved.tolist() == [[100, 200, 140, 240], [370, 300, 400, 340]]
+
+
+def test_face_crop_scales_the_face_for_phone_versions(compare):
+    photo = Image.new("RGB", (400, 320))  # a 0.4 copy of a 1000 x 800 photo
+    truth = np.array([[120, 120, 136, 136]], dtype=float)
+
+    crop, moved = compare.crop_to_face(photo, truth, [200, 100, 600, 700], factor=0.4)
+
+    assert crop.size == (160, 240) and moved.tolist() == [[40, 80, 56, 96]]
+
+
+def _rows(hit_scores, miss_scores):
+    """Photos with one expert box each: found with the given scores, or missed."""
+    rows = []
+    for s in hit_scores:
+        rows.append({"pred": np.array([[0, 0, 10, 10]], float), "scores": np.array([s]),
+                     "truth": np.array([[0, 0, 10, 10]], float)})  # fmt: skip
+    for s in miss_scores:
+        rows.append({"pred": np.array([[50, 50, 60, 60]], float), "scores": np.array([s]),
+                     "truth": np.array([[0, 0, 10, 10]], float)})  # fmt: skip
+    return rows
+
+
+def test_bootstrap_ranges_and_paired_comparison():
+    good = _rows([0.9] * 15, [0.3] * 5)
+    weak = _rows([0.9] * 8, [0.95] * 12)
+
+    result = metrics.bootstrap({"good": good, "weak": weak}, {"good": 0.5, "weak": 0.5},
+                               rounds=200)  # fmt: skip
+
+    low, high = result["models"]["good"]["recall"]
+    assert low <= 0.75 <= high  # the score on all photos lies inside its range
+    assert result["models"]["good"]["precision"] == [1.0, 1.0]
+    assert result["pairs"]["good - weak"]["first_better_share"] > 0.95
+
+
+def test_bootstrap_of_identical_models_shows_no_difference():
+    rows = _rows([0.9] * 10, [0.4] * 10)
+
+    result = metrics.bootstrap({"a": rows, "b": rows}, {"a": 0.5, "b": 0.5}, rounds=50)
+
+    assert result["pairs"]["a - b"] == {"AP50_difference_95": [0.0, 0.0], "first_better_share": 0.0}
+    with pytest.raises(ValueError):
+        metrics.bootstrap({"a": rows, "b": rows[:5]}, {"a": 0.5, "b": 0.5})
+
+
+def test_evaluate_with_a_face_crop_and_a_phone_factor(compare, tmp_path):
+    sources = tmp_path / "sources"
+    (sources / "acne04").mkdir(parents=True)
+    photo = Image.new("RGB", (1000, 800), (180, 140, 120))
+    photo.paste((255, 255, 255), (400, 300, 440, 340))
+    photo.save(sources / "acne04" / "p.png")
+    photos = [{"file": "acne04/p.png", "boxes": [{"box": [400, 300, 440, 340]}]}]
+    faces = {"acne04/p.png": [200, 100, 800, 700]}
+
+    result = compare.evaluate(FakeModel(), "whole", photos, sources, phone=False, faces=faces)
+
+    assert result["recall"] == 1.0 and result["expert_boxes"] == 1
+    assert compare.condition_name(None) == "original" and compare.condition_name(0.6) == "phone x0.6"
