@@ -406,9 +406,17 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
   Everything in `ml/DATASETS.md`; the plain-language selection report is
   `Final Year Project\Documentation\Pimple Model Selection.pdf`.
   **Carried into Step 5:** run C on TILES of the YuNet face crop (whole-photo C is much worse);
-  send the full-resolution photo; capture rules (close, sharp, well lit; refuse blurry / small
-  faces: C is weak on blurry selfies); wording "visible spots detected", never "all pimples";
+  send the full-resolution photo; capture rules (close, sharp, well lit, relaxed neutral face:
+  no smile, as expression lines are drawn as wrinkles in FFHQ; refuse blurry / small faces: C is
+  weak on blurry selfies); wording "visible spots detected", never "all pimples";
   severe acne is under-graded on selfie-quality photos → the dermatologist referral must ALSO come
   from the skin quiz (new question, e.g. painful / deep / widespread spots), not only the photo.
   Future work (not done, user's decision 2026-11-21): YOLO11m, a consented real-selfie test set.
-- **NEXT: Phase 3 Step 4** (U-Net for wrinkles and dark spots).
+  PR #17 squash-merged, tag `phase3-step3`.
+- **Phase 3 Step 4** (U-Net for wrinkles and dark spots) on branch
+  `mostafa/feature/phase3-step4-segmentation`. Part 4.1 done 2026-11-22 (details in `ml/DATASETS.md`):
+  `skincare_ml/segmentation_data.py` (loading, U-Net crop 20% sides/below + 50% above, MEMI ignore
+  zones from YuNet landmarks), `scripts/inspect_segmentation.py`, `scripts/check_masks.py` (student's
+  visual check: zones OK, no mask corrected); input size 512 px. The authors' 50k automatic wrinkle
+  masks are not used and not mentioned in the report (user's decision). Dark spots = MEMI melasma
+  patches only (small spots may be missed: limitation, wording "visible dark patches").

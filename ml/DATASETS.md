@@ -357,6 +357,43 @@ moderate (12 / 14)**: the dermatologist referral must not rely on the photo alon
 skin quiz adds a referral question; capture rules keep photos sharp). The student's selfie with C
 (face crop, frozen settings): one dot, on the real pimple (0.34), no false dot, grade mild.
 
-**ONNX** (`scripts/export_onnx.py`, 2026-11-22): `C:\SkinCareData\models\yolo_pimples_final.onnx`
+**ONNX (pimple finder)** (`scripts/export_onnx.py`, 2026-11-22): `C:\SkinCareData\models\yolo_pimples_final.onnx`
 (1 x 3 x 1,024 x 1,024 = one tile, opset 17); on 20 validation faces ONNX and PyTorch counted the
 same 286 pimples (confidence difference < 0.0001).
+
+## U-Net data: inspection and mask check (Phase 3 Step 4, Part 4.1, 2026-11-22)
+
+`scripts/inspect_segmentation.py` (report `prepared/reports/segmentation_inspection.json`):
+
+| | FFHQ-Wrinkle (1,000) | MEMI-DS (131) |
+|---|---|---|
+| YuNet face | 1,000 (21 with people behind: the best face used) | 126 (5 without a face left out) |
+| face width | ~550 px | ~3,000 px (5,184 x 3,456 clinical photos) |
+| share of the face covered (5th / median / 95th) | 0.4% / 1.3% / 4.4% | 1.1% / 9.7% / 20.7% (only the regions of the view) |
+| marked pixels kept with the crop shrunk to 512 / 768 px | 90% / 91% (lines ~5 px wide) | 99% / 99% |
+
+- **Input size 512 px** (768 keeps only 1 point more; no tiles: wrinkle lines are ~5 px wide on
+  ~550 px faces, while half the pimples were under 16 px).
+- **U-Net face crop = 20% margin on the sides and below, 50% above** (`segmentation_data.CROP_MARGINS`):
+  YuNet's box starts near the eyebrows and MEMI melasma reaches half a face-height above it; with
+  20% above, 43 of 59 front views lost part of the forehead (some 60-80% of their melasma); with 50%
+  every front view keeps 100%. YOLO keeps its own 20% crop.
+- **MEMI unknown regions ignored automatically** (the student's choice: automatic zones checked by
+  eye, rather than drawn by hand), `segmentation_data.known_dark_spots`, from YuNet's eyes, nose
+  tip and mouth corners. Front views: both cheeks ignored (from 0.22 face widths beside the nose tip,
+  eye level to just above the mouth). Side views: only the shown cheek (from 0.10 beside the nose
+  tip, eye level to 0.15 below the mouth) and the background are learned; the rest of the face is
+  ignored. A marked pixel is always learned. Coverage (`mask_check/zone_coverage.json`): 100% of every
+  marked side-view cheek inside its zone; 99.8-100% of the marked front-view forehead / nose / chin
+  outside the ignored cheeks. The first front-view zones (same numbers as the side views) hid marked
+  nose wings and the "chin" patches beside the mouth: seen on the check pictures and corrected.
+- **Student's check** (`scripts/check_masks.py`, local page, every MEMI photo with its zones + 50
+  random FFHQ masks): zones correct on all front and side views; no missing-wrinkle gaps reported, so
+  no mask is corrected (rule 6). Two observations, both kept as they are:
+  - some FFHQ photos are smiling and their **expression lines** (laugh folds beside the nose and the
+    eyes) are drawn as wrinkles. Redrawing 1,000 masks is not justified; the app asks for a relaxed,
+    neutral face (Step 5 capture rule) so expression lines do not inflate the wrinkle score.
+  - MEMI marks **melasma patches only**: small freckles next to them are unmarked, so the model
+    learns "freckles are not melasma". The dark-spot channel therefore finds large patches and may
+    miss small spots (freckles, small sun spots, post-acne marks): limitation; the app says "visible
+    dark patches", never a diagnosis.
