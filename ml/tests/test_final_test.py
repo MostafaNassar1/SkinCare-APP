@@ -134,3 +134,24 @@ def test_final_test_needs_frozen_settings_the_same_model_and_runs_once(scripts, 
     (done / "final_test_20261121_170000.json").write_text("{}", encoding="utf-8")
     with pytest.raises(SystemExit):  # already run: the result stands
         final.main([])
+
+
+# ---------- ONNX check ----------
+
+
+def test_onnx_check_compares_the_counted_pimples(monkeypatch):
+    monkeypatch.syspath_prepend(str(SCRIPTS))
+    sys.modules.pop("export_onnx", None)
+    import export_onnx
+    from skincare_ml.tiled_predict import Detections
+
+    a = Detections(np.array([[0, 0, 20, 20], [50, 50, 70, 70], [90, 90, 99, 99]], np.float32),
+                   np.array([0.5, 0.3, 0.05], np.float32))  # fmt: skip
+    same = Detections(np.array([[0, 0, 20, 20.5], [50, 50, 70, 70]], np.float32),
+                      np.array([0.51, 0.3], np.float32))  # fmt: skip
+    missing = Detections(np.array([[0, 0, 20, 20]], np.float32), np.array([0.5], np.float32))
+
+    result = export_onnx.same_detections(a, same, cutoff=0.13)
+    assert (result["matched"], result["unmatched"]) == (2, 0)  # the 0.05 box is not counted
+    assert result["largest_score_difference"] == pytest.approx(0.01, abs=1e-4)
+    assert export_onnx.same_detections(a, missing, cutoff=0.13)["unmatched"] == 1

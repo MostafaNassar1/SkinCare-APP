@@ -21,5 +21,9 @@ psutil==7.2.2
 ultralytics-thop==2.2.4
 requests==2.34.2
 
+# ONNX (MIT): the pimple finder exported for the server (onnxruntime runs it; added 2026-11-22)
+onnx==1.23.2
+onnxruntime==1.32.0
+
 # Testing
 pytest==9.1.1
