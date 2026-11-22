@@ -10,11 +10,13 @@ from skincare_ml.segmentation_data import (
     REGIONS,
     decode_memi_mask,
     kept_at_size,
+    known_dark_spots,
     line_width,
     load_sample,
     patches,
     relative_spread,
     share_inside,
+    unet_crop_box,
 )
 
 
@@ -73,6 +75,44 @@ def test_patches_count_and_size():
 
     assert patches(mask, face_area=10_000) == {"count": 2, "median_percent_of_face": 1.0}
     assert patches(np.zeros((5, 5), np.uint8), 100)["median_percent_of_face"] is None
+
+
+def _face(nose_x):
+    # face box 100 x 100 at (100, 100); eyes at y 120, mouth at y 165
+    return Face(x=100, y=100, width=100, height=100, score=1.0,
+                landmarks=((125, 120), (175, 120), (nose_x, 145), (130, 165), (170, 165)))  # fmt: skip
+
+
+def test_unet_crop_has_room_for_the_forehead():
+    assert unet_crop_box(_face(150), 1000, 1000) == (80, 50, 220, 220)
+    assert unet_crop_box(_face(150), 210, 210) == (80, 50, 210, 210)  # kept inside the photo
+
+
+def test_front_view_ignores_both_cheeks_but_never_a_marked_pixel():
+    dark = np.zeros((400, 400), np.uint8)
+    dark[90, 150] = 1  # forehead spot
+    dark[150, 115] = 1  # a marked spot inside a cheek zone
+
+    known = known_dark_spots(_face(150), "F", dark)
+
+    assert known[150, 115] == 1  # marked = always learned
+    assert known[150, 120] == 0 and known[150, 180] == 0  # both cheeks ignored
+    assert known[150, 135] == 1 and known[150, 165] == 1  # the nose and its wings are learned
+    assert known[90, 150] == 1 and known[195, 150] == 1  # forehead, chin
+    assert known[110, 120] == 1  # above eye level: not a cheek
+    assert known[166, 120] == 1  # beside the mouth: part of MEMI's "chin", learned
+
+
+def test_side_views_learn_only_their_cheek_and_the_background():
+    dark = np.zeros((400, 400), np.uint8)
+
+    left_view = known_dark_spots(_face(112), "L", dark)  # nose on the left of the picture
+    right_view = known_dark_spots(_face(188), "R", dark)
+
+    assert left_view[150, 170] == 1 and left_view[150, 105] == 0  # its cheek vs the nose side
+    assert left_view[80, 150] == 0  # forehead unknown
+    assert right_view[150, 130] == 1 and right_view[150, 195] == 0
+    assert left_view[10, 10] == 1 and right_view[390, 390] == 1  # background is known
 
 
 def test_load_sample_reads_both_sources(tmp_path):

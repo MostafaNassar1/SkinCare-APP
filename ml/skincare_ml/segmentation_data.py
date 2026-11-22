@@ -18,6 +18,24 @@ from skincare_ml.memi import REGION_COLOURS
 
 REGIONS = tuple(REGION_COLOURS.values())  # region id = position + 1 (0 = no dark spot)
 
+# The U-Net's face crop (decided 2026-11-22, Part 4.1): YuNet's box starts near the eyebrows and
+# melasma on MEMI foreheads reaches up to half a face-height above it; 20% kept only part of it on
+# 43 of 59 front views, 50% at the top keeps 100% (forehead wrinkles in selfies too).
+CROP_MARGINS = {"left": 0.2, "right": 0.2, "top": 0.5, "bottom": 0.2}
+
+# Cheek zones in face-box units, measured on the 126 MEMI photos with a face (Part 4.1).
+# Side views (the zone is what we LEARN from): marked cheeks start >= 0.13 face widths beside the
+# nose tip and lie between eye level and 0.13 below the mouth, so the zone is a little larger.
+# Front views (the zones are IGNORED): the marked nose reaches 0.25 face widths beside the nose
+# tip and the marked "chin" starts at mouth level (it includes the skin beside the mouth), so the
+# cheek zones start beside the nose wings and stop just above the mouth (first version with the
+# side-view numbers hid marked nose wings and chin patches: seen on the check pictures).
+CHEEK_ZONE = {  # (start beside the nose tip in face widths, end below the mouth in face heights)
+    "side": (0.10, 0.15),
+    "front": (0.22, -0.03),
+}
+FACE_AREA = {"left": 0.4, "right": 0.4, "top": 0.6, "bottom": 0.3}  # beyond = background
+
 
 @dataclass
 class Sample:
@@ -56,6 +74,54 @@ def load_sample(entry: dict, data_dir: Path) -> Sample:
         raise FileNotFoundError(entry["mask"])
     dark, regions = decode_memi_mask(colour)
     return Sample(image, None, dark, regions)
+
+
+def unet_crop_box(face, width: int, height: int) -> tuple[int, int, int, int]:
+    """(left, top, right, bottom) of the U-Net's face crop (CROP_MARGINS), kept inside the photo."""
+    m = CROP_MARGINS
+    return (max(0, int(face.x - m["left"] * face.width)),
+            max(0, int(face.y - m["top"] * face.height)),
+            min(width, int(round(face.x + (1 + m["right"]) * face.width))),
+            min(height, int(round(face.y + (1 + m["bottom"]) * face.height))))  # fmt: skip
+
+
+def _box(face, shape, x0: float, x1: float, y0: float, y1: float) -> np.ndarray:
+    """A 0 / 1 picture with a rectangle given in face-box units (0 = box left / top edge)."""
+    out = np.zeros(shape[:2], np.uint8)
+    height, width = shape[:2]
+    left = int(np.clip(face.x + x0 * face.width, 0, width))
+    right = int(np.clip(face.x + x1 * face.width, 0, width))
+    top = int(np.clip(face.y + y0 * face.height, 0, height))
+    bottom = int(np.clip(face.y + y1 * face.height, 0, height))
+    out[top:bottom, left:right] = 1
+    return out
+
+
+def known_dark_spots(face, view: str, dark_spots: np.ndarray) -> np.ndarray:
+    """Where a MEMI mask can be trusted (1) and where training must ignore it (0).
+
+    Front views (forehead, nose, chin annotated): both cheeks are unknown. Side views (only the
+    cheek they show): the rest of the face is unknown; the cheek and the background are known. A
+    marked pixel is always known (a dark spot whatever the zone). Zones come from YuNet's nose tip,
+    eyes and mouth corners (CHEEK_ZONE, FACE_AREA).
+    """
+    (_, eye_r), (_, eye_l), (nose_x, _), (_, mouth_r), (_, mouth_l) = face.landmarks
+    beside_nose, below_mouth = CHEEK_ZONE["front" if view == "F" else "side"]
+    nose = (nose_x - face.x) / face.width
+    top = ((eye_r + eye_l) / 2 - face.y) / face.height
+    bottom = ((mouth_r + mouth_l) / 2 - face.y) / face.height + below_mouth
+    far_left, far_right = -FACE_AREA["left"], 1 + FACE_AREA["right"]
+    image_left_cheek = _box(face, dark_spots.shape, far_left, nose - beside_nose, top, bottom)
+    image_right_cheek = _box(face, dark_spots.shape, nose + beside_nose, far_right, top, bottom)
+    if view == "F":
+        known = 1 - (image_left_cheek | image_right_cheek)
+    else:
+        face_area = _box(face, dark_spots.shape, far_left, far_right,
+                         -FACE_AREA["top"], 1 + FACE_AREA["bottom"])  # fmt: skip
+        # the person's left cheek is on the right of the picture (and the nose on the left)
+        cheek = image_right_cheek if view == "L" else image_left_cheek
+        known = (1 - face_area) | cheek
+    return (known | (dark_spots > 0)).astype(np.uint8)
 
 
 def kept_at_size(mask: np.ndarray, size: int) -> float | None:
