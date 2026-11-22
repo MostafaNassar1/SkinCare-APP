@@ -155,3 +155,32 @@ def test_onnx_check_compares_the_counted_pimples(monkeypatch):
     assert (result["matched"], result["unmatched"]) == (2, 0)  # the 0.05 box is not counted
     assert result["largest_score_difference"] == pytest.approx(0.01, abs=1e-4)
     assert export_onnx.same_detections(a, missing, cutoff=0.13)["unmatched"] == 1
+
+
+# ---------- type model final test ----------
+
+
+def test_type_model_test_refuses_changed_labels_and_a_second_run(monkeypatch, tmp_path):
+    monkeypatch.setenv("SKINCARE_DATA_DIR", str(tmp_path))
+    monkeypatch.syspath_prepend(str(SCRIPTS))
+    sys.modules.pop("test_type_model", None)
+    import test_type_model
+
+    folder = tmp_path / "prepared" / "lesion_types"
+    folder.mkdir(parents=True)
+    labels = {"p.jpg#1": "whitehead"}
+    (folder / "test_labels_frozen.json").write_text(json.dumps(
+        {"labels": labels, "sha256": "changed"}), encoding="utf-8")  # fmt: skip
+    with pytest.raises(ValueError):
+        test_type_model.test_items(folder)
+    (folder / test_type_model.RESULT).write_text("{}", encoding="utf-8")
+    with pytest.raises(SystemExit):
+        test_type_model.main([])
+
+
+def test_type_model_balanced_ranges_of_a_perfect_model():
+    sys.path.insert(0, str(SCRIPTS))
+    import test_type_model
+
+    labels = np.array([0, 0, 1, 1, 2, 2])
+    assert test_type_model.balanced_ranges(labels, labels, rounds=50) == [1.0, 1.0]
