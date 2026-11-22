@@ -288,3 +288,75 @@ epochs; validation = the 374 close-ups:
 best of 20 epochs is optimistic; the frozen test set, used once at the end, gives the real
 number. Papule vs pustule stays the hardest boundary for every variant (31 of 72 pustules called
 papules by "large"), matching the labeller's own repeat changes.
+
+**Final test (2026-11-22, once, `scripts/test_type_model.py`):** 80 frozen test close-ups (34
+whiteheads, 34 papules, 12 pustules; "other" / "unclear" not scored): **balanced accuracy 0.655
+(95% range 0.53-0.77)**, accuracy 0.675, recall whitehead 0.68 / papule 0.71 / pustule 0.58;
+87% of inflamed spots called inflamed. Confusion (rows = student): whitehead 23 / 11 / 0, papule
+3 / 24 / 7, pustule 3 / 2 / 7. Close to validation (0.681); the small test set gives a wide range.
+
+## Pimple finder (YOLO11s): runs, choice and final test (2026-11-05 → 2026-11-22)
+
+**v1** (GPU laptop, 2026-11-05): yolo11s from COCO weights, whole photos at 1,280 px, 150 epochs.
+Validation mAP50 0.506, test 0.497 (recall 0.45). On the student's selfie it marked skin shine
+beside the nose and gave the real pimple only 0.32: half of the pimples are under 16 px at 1,280,
+and selfies are softer than ACNE04's clinical photos.
+
+**Fine-tuning runs** (GPU laptop, 2026-11-15/16, each from v1, batch 4, AdamW; RAM fix workers=0;
+A resumed after the RAM incident, C after a Windows Update restart; details in the handoff folder
+`Final Year Project\SkinCare_FineTuning_Handoff`): **A** whole photos (56 epochs, best 36),
+**B** 1,024 px full-resolution tiles (20 epochs), **C** tiles + one phone-like copy of every
+training tile (20 epochs, best 17). Training-time scores of tiles and whole photos are not
+comparable, so every model was rescored the same way (`scripts/compare_models.py`, own metrics
+in `skincare_ml/detection_metrics.py`, whole photos in photo pixels, each at its best-F1 cutoff).
+
+**Validation comparison 1** (175 photos, whole photo, 2026-11-21), AP50 original / phone-like x0.4:
+v1 0.496 / 0.405, A 0.526 / 0.433, B 0.535 / 0.314, C 0.541 / 0.383. A looked best on selfies,
+but the student's real selfie showed the opposite (A missed the pimple and marked the shine; B / C
+found it, their only false marks were wall stickers that the app's face crop removes).
+
+**Validation comparison 2** (as the app will run: YuNet face crop + 20% margin, 152 faces, 23
+photos without a face left out; bootstrap 95% ranges, 1,000 paired draws of the photos):
+
+| AP50 (95% range) | original | phone x0.6 (sharp selfie) | phone x0.4 (blurry) |
+|---|---|---|---|
+| v1 | 0.530 (0.50-0.56) | 0.497 | 0.443 |
+| A | 0.546 (0.52-0.57) | 0.525 | **0.463** |
+| **C (tiled)** | **0.568 (0.54-0.59)** | 0.522 | 0.403 |
+| C on whole photos | 0.413 | 0.376 | 0.332 |
+
+C beats A on original faces in 100% of the draws (recall 0.58 vs 0.51 at equal precision, count
+bias -0.7 vs -4.0 pimples per face); tie at x0.6 (C better in 64%); A better on blurry x0.4. C
+must run on tiles. **Chosen: C**, with capture rules in the app (close, sharp, well-lit photos;
+blurry ones refused: Step 5). Not tried (future work): YOLO11m, real consented selfies.
+
+**Two cutoffs and grade calibration** (fitted on validation, frozen with the weights' SHA-256 in
+`C:\SkinCareData\models\pimple_detector_settings.json` by `scripts/freeze_detector_settings.py`):
+display 0.20 (dots drawn: ~80% on real pimples), count 0.13 (best F1, the most complete count).
+A "dot on the pimple" rule (centre of the box inside the expert box) is reported next to the
+standard box rule (IoU >= 0.5), which punishes a box shifted by a few pixels on a 15 px pimple.
+The Hayashi table on our raw count agreed with the dermatologists' grade on only 23% of validation
+faces (the v2 circles mark many more lesions than they counted), so the count limits are learned
+(`skincare_ml/grading.py`, three app levels, very severe = severe): **mild <= 14 counted pimples,
+moderate <= 69, severe above**.
+
+**Final test** (once, `scripts/final_test.py`, 150 test faces, 3,603 expert pimples incl. the
+student's 41 additions; refuses to run again; `prepared/yolo_evaluations/final_test_20261121_190102.json`):
+
+| C, test | original | phone x0.6 |
+|---|---|---|
+| dots on real pimples, display 0.20 | **80% (78-82%)** | **88% (86-90%)** |
+| pimples with a dot, display 0.20 | 49% (45-52%) | 42% (38-45%) |
+| dots right / pimples found, count 0.13 | 67% / 61% | 76% / 53% |
+| grade agreement with dermatologists | **65% (57-73%)** | 65% (58-73%) |
+| AP50 box rule / dot rule | 0.538 / 0.677 | 0.496 / 0.654 |
+
+Grade mistakes are one level off (no mild called severe, no severe called mild on originals);
+moderate is often called mild (25 / 70). **On selfie-quality photos severe acne is mostly called
+moderate (12 / 14)**: the dermatologist referral must not rely on the photo alone (Step 5: the
+skin quiz adds a referral question; capture rules keep photos sharp). The student's selfie with C
+(face crop, frozen settings): one dot, on the real pimple (0.34), no false dot, grade mild.
+
+**ONNX** (`scripts/export_onnx.py`, 2026-11-22): `C:\SkinCareData\models\yolo_pimples_final.onnx`
+(1 x 3 x 1,024 x 1,024 = one tile, opset 17); on 20 validation faces ONNX and PyTorch counted the
+same 286 pimples (confidence difference < 0.0001).
