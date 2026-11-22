@@ -393,4 +393,22 @@ services/ (shared logic + external APIs) → repositories/ (DB queries) → mode
 - Phase 3 Step 2 (rules engine + 32-product catalogue + pictures + quiz v2 + explanations;
   migrations 0010-0012): done 2026-10-29 on branch `mostafa/feature/phase3-step2-rules-engine`,
   813 tests (see "Rules engine & catalogue").
-- **NEXT: Phase 3 Step 3** (YOLO pimple detector; the student labels pimple types first).
+- Phase 3 Step 3 (pimple finder + lesion-type model): done 2026-11-22 on branch
+  `mostafa/feature/phase3-step3-pimple-detector`, 127 ml tests. Student labelled pimple types (5
+  rounds, scout active learning, drift check, frozen test labels `70d40513…`) and missed pimples
+  (41 added, frozen `730c4cd7…`). Type model MobileNetV3-large (CPU), test balanced accuracy 0.655.
+  YOLO11s v1 + fine-tuning runs A/B/C on the GPU laptop; **C chosen** (tiles + phone copies) on
+  validation with YuNet face crops + bootstrap ranges; frozen settings
+  (`C:\SkinCareData\models\pimple_detector_settings.json`: display cutoff 0.20, count cutoff 0.13,
+  grade limits mild ≤ 14 / moderate ≤ 69 / severe above, learned because the Hayashi table on our
+  count agreed only 23%); final test ONCE: 80% of dots on real pimples, ~half the pimples found,
+  grade agreement 65%; ONNX `yolo_pimples_final.onnx` (one 1,024 px tile) matches PyTorch.
+  Everything in `ml/DATASETS.md`; the plain-language selection report is
+  `Final Year Project\Documentation\Pimple Model Selection.pdf`.
+  **Carried into Step 5:** run C on TILES of the YuNet face crop (whole-photo C is much worse);
+  send the full-resolution photo; capture rules (close, sharp, well lit; refuse blurry / small
+  faces: C is weak on blurry selfies); wording "visible spots detected", never "all pimples";
+  severe acne is under-graded on selfie-quality photos → the dermatologist referral must ALSO come
+  from the skin quiz (new question, e.g. painful / deep / widespread spots), not only the photo.
+  Future work (not done, user's decision 2026-11-21): YOLO11m, a consented real-selfie test set.
+- **NEXT: Phase 3 Step 4** (U-Net for wrinkles and dark spots).
