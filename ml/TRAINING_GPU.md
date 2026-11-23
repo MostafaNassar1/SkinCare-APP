@@ -138,3 +138,63 @@ photos are NOT used here.
 
 `...\prepared\yolo_runs\pimples_A\`, `pimples_B\`, `pimples_C\` (weights + results) and, if step 4
 was run, the newest `...\prepared\yolo_evaluations\compare_val_*.json`.
+
+---
+
+# U-Net session: wrinkles + dark spots (Phase 3 Step 4, prepared 2026-11-23)
+
+One run, "v1": a U-Net (ResNet34 encoder pretrained on ImageNet) learns wrinkles (FFHQ-Wrinkle)
+and dark spots (MEMI-DS melasma) at 512 px. Checked on the development laptop with
+`train_unet.py --smoke` and the tests. Expected time on the RTX 5070 Laptop: about 1 hour (at most
+60 epochs, stops earlier after 15 epochs without improvement).
+
+## 1. Update the repository on the GPU laptop
+
+```
+cd D:\Development\Projects\skincare_ai\SkinCare-APP
+git status                      # must be clean; if not, stop and ask
+git fetch
+git checkout mostafa/feature/phase3-step4-segmentation
+git pull
+```
+
+## 2. Copy (USB drive, ~0.1 GB)
+
+| From the development laptop | To the GPU laptop's data folder |
+|---|---|
+| `C:\SkinCareData\prepared\unet_data\` (images, labels, index.json) | `...\SkinCareData\prepared\unet_data\` |
+
+Nothing else is needed (no original photos). The pretrained ResNet34 weights (~85 MB) are
+downloaded once by PyTorch on the first run: the laptop needs internet at the start.
+
+## 3. Train
+
+```
+cd D:\Development\Projects\skincare_ai\SkinCare-APP\ml
+conda activate hsn
+$env:SKINCARE_DATA_DIR = "D:\Development\Data\Datasets\Processed\SkinCareData"
+$env:PYTHONPATH = "."
+python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"
+python scripts/train_unet.py --smoke          # 1 minute, CPU: checks the copy and the code
+python scripts/train_unet.py                  # the real run "v1"
+```
+
+- One line per epoch: losses and the validation Dice of each channel; "* best" marks a new best.
+- **"CUDA out of memory"**: start again with `--run v1b --batch 4` (and record it).
+- **Stopped** (power, Windows Update restart): `python scripts/train_unet.py --resume`
+  continues from the last finished epoch.
+- Keep `workers` at 0 (the script does), the laptop plugged in, sleep off; do not open
+  `results.csv` in Excel while it trains.
+- **RAM limit (the student's rule): at most 60% of the RAM.** `skincare_ml/ram_guard.py` checks
+  every 20 batches and stops cleanly (resumable) above 60% for the training or 90% for the whole
+  laptop; each epoch's peak is in `results.csv` (`ram_peak_gb`, `ram_peak_share`).
+- Check the USB copy first: `python scripts/verify_unet_data.py` (every file's SHA-256).
+- The step-by-step version for the AI assistant on the GPU laptop is
+  `Final Year Project\SkinCare_UNet_Handoff\AI_TRAINING_INSTRUCTIONS.md`.
+- The test photos are never used here: choosing the cutoffs, severity limits and the one-time final
+  test happen on the development laptop.
+
+## 4. Bring back
+
+`...\SkinCareData\prepared\unet_runs\v1\` (best.pt, last.pt, results.csv, settings.json and any
+resumed_*.json) to `C:\SkinCareData\prepared\unet_runs\v1\` on the development laptop.
