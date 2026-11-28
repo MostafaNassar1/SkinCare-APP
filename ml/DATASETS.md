@@ -397,3 +397,40 @@ same 286 pimples (confidence difference < 0.0001).
     learns "freckles are not melasma". The dark-spot channel therefore finds large patches and may
     miss small spots (freckles, small sun spots, post-acne marks): limitation; the app says "visible
     dark patches", never a diagnosis.
+
+## U-Net v1: training, review and the dark-patch problem (Part 4.2, 2026-11-26 → 2026-11-28)
+
+**Training (friend's GPU laptop, RTX 5070 Laptop 8 GB, 2026-11-26):** run "v1" from ImageNet with
+`train_unet.py` defaults (batch 8, lr 3e-4, MEMI x4, 512 px) on `unet_data` (index `b0f9c0b1…`):
+41 epochs of ~49 s (~34 min), best epoch 26, stopped by patience 15. **RAM peak 2.2 GB = 14%**
+(limit 60%: the guard was never triggered). Validation (171 photos, cutoff 0.5): **wrinkles Dice
+0.604** (precision 0.62, recall 0.59; per-photo median 0.60, 10th-90th percentile 0.46-0.69),
+**dark spots Dice 0.740** (precision 0.71, recall 0.77, only 21 MEMI photos, epoch-to-epoch swings
+0.64-0.74). The GPU laptop's assistant delivered a repackaged folder
+(`Final Year Project\SkinCare_UNet_v1_Deliverable`: weights as a CPU state dict `unet_v1_state.pt`
+SHA-256 `408349c4…`, a CPU notebook, its own copy of our code with one import changed, reports)
+instead of the requested best.pt / last.pt / TRAINING_REPORT.md; the weights were verified here by
+recomputing the same validation Dice with our own code (0.6717, identical).
+
+**Independent review (2026-11-28, validation photos only): the dark-patch channel fails outside
+MEMI.** On the 150 normal FFHQ validation faces it painted a median **49%** of the crop as dark
+patches (every face above 5%, up to 68%), including walls, beards and the black letterbox border;
+on the student's selfie 50%. On the 21 MEMI faces it was right (21% predicted vs 20% true). Cause:
+the dark channel was trained only on MEMI photos (FFHQ dark labels and the padding were "unknown"),
+so it never saw a "no" outside clinical melasma photos: the shortcut risk noted at the start of
+Step 4. The validation Dice could not show it (measured on MEMI photos only). The wrinkle channel
+was fine on the selfie (0.2% of the crop) but also marked the black border and ~8% of MEMI faces.
+**v1 is not used.**
+
+**v2 (decided with the student 2026-11-28):** label rules v2 (`export_unet_data.py --labels v2`
+→ `prepared/unet_data_v2/`): the letterbox padding is "no" for both channels, and **FFHQ faces are
+"no dark patches"** (assumption: FFHQ-Wrinkle faces rarely show melasma-like patches; a few real
+small spots may be taught as "no": limitation). A third idea ("MEMI background = no wrinkles") was
+dropped: the U-Net crop holds almost no background and turned cheeks reach beyond YuNet's box.
+Every epoch now reports `val_dark_on_normal_pct` (share of the normal validation pictures painted
+as dark patches) and, since FFHQ dark labels are known, false patches lower the dark Dice, so an
+epoch that paints normal faces cannot be chosen. Training continues FROM v1 on the development
+laptop's CPU (~53 min per epoch measured; from scratch would take 23-37 h): `--init
+unet_v1_state.pt --epochs 10 --patience 4 --lr 1e-4`, the v1 weights scored first as "epoch 0".
+Acceptance check before use: dark patches on normal faces near 0%, MEMI faces still ~20%, MEMI
+faces made selfie-like still detected, the selfie nearly clear.

@@ -1,7 +1,7 @@
 r"""Check that prepared/unet_data/ arrived complete and unchanged (e.g. after a USB copy).
 
     cd ml; $env:PYTHONPATH = "."
-    python scripts/verify_unet_data.py
+    python scripts/verify_unet_data.py [--data unet_data_v2]
 
 Compares every picture with the SHA-256 written by export_unet_data.py and prints the index's own
 SHA-256 (it must match the one in the handoff instructions). Exit code 0 = all good.
@@ -18,8 +18,12 @@ def sha256(path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def main() -> int:
-    folder = config.prepared_dir() / "unet_data"
+def main(argv: list[str] | None = None) -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Check a copied U-Net data folder.")
+    parser.add_argument("--data", default="unet_data", help="folder in prepared/ (e.g. unet_data_v2)")
+    folder = config.prepared_dir() / parser.parse_args(argv).data
     index_file = folder / "index.json"
     if not index_file.exists():
         print(f"missing: {index_file}", file=sys.stderr)

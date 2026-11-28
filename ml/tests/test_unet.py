@@ -84,14 +84,27 @@ def test_shrink_keeps_half_marked_pixels_and_marks_partly_unknown_ones_unknown()
     assert small[1, 0, 1] == IGNORE and small[1, 1, 1] == 0
 
 
-def test_letterbox_shows_the_whole_crop_and_pads_with_unknown():
+def test_letterbox_shows_the_whole_crop_and_the_padding_means_nothing_there():
     image = np.full((50, 100, 3), 200, np.uint8)
-    labels = np.zeros((50, 100, 3), np.uint8)
+    labels = np.full((50, 100, 3), IGNORE, np.uint8)  # the crop itself unknown
 
     photo, marks = place(image, labels, placement(100, 50, 64), 64)
 
-    assert photo[32, 32].tolist() == [200, 200, 200]
-    assert (marks[0, :, 0] == IGNORE).all() and (marks[32, :, 0] == 0).all()  # padding / crop
+    assert photo[32, 32].tolist() == [200, 200, 200] and photo[0, 32].tolist() == [0, 0, 0]
+    assert (marks[0, :, :2] == 0).all()  # v2: the black border is "no" for both channels
+    assert (marks[32, :, :2] == IGNORE).all()  # the crop keeps its own labels
+
+
+def test_v2_labels_known_masks_for_both_channels():
+    wrinkles = np.zeros((4, 4), np.uint8)
+    no_dark = np.zeros((4, 4), np.uint8)
+    ffhq = encode_labels((4, 4), wrinkles=wrinkles, dark_spots=no_dark)
+    assert (ffhq[..., 1] == 0).all()  # v2: a normal face has no dark patches
+
+    known = np.zeros((4, 4), np.uint8)
+    known[:, 0] = 1
+    partly = encode_labels((4, 4), wrinkles=wrinkles, known_wrinkles=known)
+    assert (partly[:, 0, 0] == 0).all() and (partly[:, 1:, 0] == IGNORE).all()
 
 
 def test_random_versions_keep_valid_labels():
@@ -157,6 +170,28 @@ def test_smoke_training_writes_a_run_and_refuses_to_overwrite_it(monkeypatch, tm
     header = lines[0].split(",")
     row = dict(zip(header, lines[1].split(","), strict=True))
     assert 0 < float(row["ram_peak_share"]) < 0.6  # the peak RAM of the epoch is recorded
+    assert 0 <= float(row["val_dark_on_normal_pct"]) <= 100  # the false-alarm check
+
+
+def test_a_run_can_start_from_saved_weights_and_scores_them_first(monkeypatch, tmp_path, capsys):
+    _tiny_data(tmp_path)
+    monkeypatch.setenv("SKINCARE_DATA_DIR", str(tmp_path))
+    monkeypatch.syspath_prepend(str(SCRIPTS))
+    sys.modules.pop("train_unet", None)
+    import train_unet
+
+    (tmp_path / "models").mkdir()
+    torch.save({"state_dict": UNet(pretrained=False).state_dict()}, tmp_path / "models" / "start.pt")
+
+    assert train_unet.main(["--smoke", "--run", "v2", "--init", "start.pt"]) == 0
+    lines = (tmp_path / "prepared" / "unet_runs" / "v2_smoke" / "results.csv").read_text(
+        encoding="utf-8").splitlines()
+    assert [line.split(",")[0] for line in lines[1:]] == ["0", "1"]  # epoch 0 = the start weights
+    out = capsys.readouterr().out
+    assert "before training (epoch 0 = start.pt)" in out and "dark on normal faces" in out
+    settings = json.loads((tmp_path / "prepared" / "unet_runs" / "v2_smoke" / "settings.json")
+                          .read_text(encoding="utf-8"))  # fmt: skip
+    assert settings["init"] == "start.pt" and settings["data"] == "unet_data"
 
 
 def test_training_stops_safely_when_the_ram_limit_is_crossed(monkeypatch, tmp_path, capsys):

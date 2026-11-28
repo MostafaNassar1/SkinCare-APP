@@ -1,10 +1,14 @@
-"""Training data for the U-Net (Phase 3 Step 4, 2026-11-23).
+"""Training data for the U-Net (Phase 3 Step 4, 2026-11-23; label rules v2 on 2026-11-28).
 
 Each photo is stored ONCE (scripts/export_unet_data.py) as its U-Net face crop shrunk to
 STORED_SIDE px + a label picture (PNG, OpenCV channel 0 = wrinkles, 1 = dark spots, 2 unused) whose
 pixels are 0 (no), 1 (yes) or IGNORE (unknown). Training places each crop on a SIZE x SIZE canvas
-(whole crop visible, padding ignored) with random changes; validation and the app use the same
-placement without the random part ("letterbox").
+(whole crop visible) with random changes; validation and the app use the same placement without
+the random part ("letterbox").
+
+v2 (after v1 painted ~49% of every normal face as dark patches: the dark channel had only ever seen
+MEMI photos and never a "no" outside them): the padding is "no" for both channels (it was unknown,
+and v1 marked the black border) and FFHQ faces are "no dark patches" (export_unet_data.py).
 """
 
 import json
@@ -20,17 +24,20 @@ SIZE = 512  # model input (Part 4.1: 512 keeps 90% of the wrinkle pixels, 768 on
 STORED_SIDE = 640  # longest side of the stored crops: room for zooming in during training
 
 
-def encode_labels(shape, wrinkles=None, dark_spots=None, known_dark=None) -> np.ndarray:
+def encode_labels(shape, wrinkles=None, dark_spots=None, known_dark=None,
+                  known_wrinkles=None) -> np.ndarray:  # fmt: skip
     """H x W x 3 uint8 label picture: channel 0 wrinkles, 1 dark spots (0 / 1 / IGNORE), 2 zero.
-    A channel given as None is unknown everywhere; known_dark (1 = trusted) limits dark spots."""
+
+    A channel given as None is unknown everywhere; a channel given as a mask is known where its
+    `known_*` picture is 1 (everywhere when that is None). A marked pixel is always known."""
     labels = np.full((*shape[:2], 3), IGNORE, np.uint8)
     labels[..., 2] = 0
-    if wrinkles is not None:
-        labels[..., 0] = (wrinkles > 0).astype(np.uint8)
-    if dark_spots is not None:
-        dark = (dark_spots > 0).astype(np.uint8)
-        known = np.ones(shape[:2], bool) if known_dark is None else known_dark > 0
-        labels[..., 1] = np.where(known | (dark > 0), dark, IGNORE)
+    for c, (mask, known) in enumerate(((wrinkles, known_wrinkles), (dark_spots, known_dark))):
+        if mask is None:
+            continue
+        marked = (mask > 0).astype(np.uint8)
+        trusted = np.ones(shape[:2], bool) if known is None else known > 0
+        labels[..., c] = np.where(trusted | (marked > 0), marked, IGNORE)
     return labels
 
 
@@ -66,12 +73,12 @@ def placement(width: int, height: int, size: int = SIZE, zoom: float = 1.0, angl
 
 
 def place(image: np.ndarray, labels: np.ndarray, matrix: np.ndarray, size: int = SIZE):
-    """Apply a placement: photo smoothly (black padding), labels without blending (IGNORE padding)."""
+    """Apply a placement: photo smoothly, labels without blending. The padding is black and
+    labelled "no" for both channels (v2: v1 left it unknown and then marked the black border)."""
     photo = cv2.warpAffine(image, matrix, (size, size), flags=cv2.INTER_LINEAR,
                            borderMode=cv2.BORDER_CONSTANT, borderValue=(0, 0, 0))  # fmt: skip
     marks = cv2.warpAffine(labels, matrix, (size, size), flags=cv2.INTER_NEAREST,
-                           borderMode=cv2.BORDER_CONSTANT,
-                           borderValue=(IGNORE, IGNORE, 0))  # fmt: skip
+                           borderMode=cv2.BORDER_CONSTANT, borderValue=(0, 0, 0))  # fmt: skip
     return photo, marks
 
 
@@ -126,8 +133,9 @@ class UNetDataset(torch.utils.data.Dataset):
     melasma photos against 700 wrinkle photos); training adds random changes, validation not."""
 
     def __init__(self, folder: Path, split: str, train: bool, size: int = SIZE,
-                 memi_repeat: int = 1, seed: int = 2026, limit: int | None = None):  # fmt: skip
-        items = [i for i in load_index(folder) if i["split"] == split]
+                 memi_repeat: int = 1, seed: int = 2026, limit: int | None = None,
+                 sources: tuple[str, ...] = ("ffhq_wrinkle", "memi_ds")):  # fmt: skip
+        items = [i for i in load_index(folder) if i["split"] == split and i["source"] in sources]
         if limit:  # quick checks: the first `limit` photos of each source
             items = [i for s in ("ffhq_wrinkle", "memi_ds")
                      for i in [j for j in items if j["source"] == s][:limit]]  # fmt: skip
